@@ -6,12 +6,12 @@ Satu GitHub Pages landing + satu Web App Google Apps Script untuk **dua cara keh
 
 ## Status 20 November 2026
 
-- UI GitHub Pages tersedia; pautan Web App masih perlu diisi selepas deployment.
+- UI GitHub Pages tersedia; URL Web App `/exec` telah dipasang ke `index.html` pada 20 November 2026. Pengesahan end-to-end perlu dibuat oleh pemilik.
 - Kod Web App sebenar tersedia dalam `gas/Code.gs` dan `gas/Checkin.html`.
 - Tab baharu `KEHADIRAN_GS` telah disediakan dalam spreadsheet asal, kosong (header sahaja).
 - Source `Daftar GS`, `DASHBOARD KUOTA`, data pembayaran, resit, dan AutoCrat **tidak diubah**.
 - 19/19 unit mock tests lulus dengan **data rekaan sahaja**. **Tiada ujian check-in sebenar** dijalankan.
-- GAS source belum dipasang atau Web App belum dideploy oleh pembantu; check-in **belum LIVE**.
+- Pemilik melaporkan kedua-dua fail GAS sudah dimasukkan dan telah memberikan URL Web App `/exec`. Sambungan frontend dikonfigurasi; ujian akses/login sebenar masih diperlukan. Jangan buka sesi sebelum hari program.
 
 ## Sesi
 
@@ -58,6 +58,6 @@ Check-in ditutup secara lalai. Urusetia hanya boleh membuka sesi **pada tarikh h
 
 ## Had semasa
 
-- **Belum LIVE** sehingga dua fail GAS dipasang, property diset, Web App dideploy dan URL `/exec` disambungkan pada frontend.
+- **Belum disahkan end-to-end**: source GAS dilaporkan sudah dipasang dan URL `/exec` disambungkan pada frontend. Semak `GS_STAFF_KEY`, `gsSetupOnce_`, paparan `/exec`, login staf dan keizinan Web App; tiada check-in peserta sebenar diuji.
 - Tiada integrasi auto eCertificate, pembetulan/void kehadiran, atau penjejakan akaun petugas individu; sistem menyimpan label petugas yang diisi sendiri.
 - Tiada sample pendaftaran, bayaran atau check-in sebenar diwujudkan dalam ujian.
