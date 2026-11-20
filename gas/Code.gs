@@ -24,7 +24,8 @@ const GS_CFG_ = Object.freeze({
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Checkin')
     .setTitle('Generasi Sunnah 2026 — Check-in')
-    .addMetaTag('viewport','width=device-width, initial-scale=1');
+    .addMetaTag('viewport','width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /** Run once from the Apps Script editor, not from the public web application. */

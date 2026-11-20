@@ -17,29 +17,45 @@
     .tools{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}.field{display:block;font-size:12px;font-weight:750;color:#53665d;margin-bottom:7px}.control{width:100%;border:1px solid #cfdbd1;background:#fff;border-radius:11px;padding:13px 14px;min-height:47px;color:var(--ink)}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:14px 0 21px}.stat{border-radius:13px;background:#f5f8f5;border:1px solid #e9efe9;padding:15px 16px}.stat small{font-size:11px;color:#617369}.stat strong{display:block;font-size:29px;letter-spacing:-.7px;color:var(--deep);line-height:1.2;margin-top:4px}.list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:17px 0 9px}.list-head h3{margin:0;font-size:15px}.participant{padding:14px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.participant:last-child{border:0}.person{font-size:14px;font-weight:800}.person small{display:block;font-size:11px;font-weight:500;color:#788980;margin-top:3px}.empty{color:#788980;font-size:13px;padding:18px 0}.foot{max-width:1140px;margin:0 auto 35px;padding:0 24px;font-size:12px;color:#7a8981;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}.hidden{display:none!important}
     @media(max-width:760px){.hero-row{grid-template-columns:1fr;gap:10px}.hero-art{order:-1}.hero-art img{max-width:470px;width:92%}}
     @media(max-width:660px){.nav-inner{padding:13px 17px}.brand strong{font-size:16px}.mark{width:42px;height:36px}.hero-inner{padding:29px 20px 72px}.hero-art img{max-width:350px;width:100%}.hero h1{font-size:40px}.hero p{font-size:14px}.dates{gap:9px}.date{font-size:12px;width:100%}main{padding:0 13px;margin-top:-30px}.panel-head{padding:23px 20px 8px}.panel-head h2{font-size:25px}.tabs{margin:17px 18px 0}.tab{padding:13px 8px;font-size:13px}.content{padding:24px 19px 26px}.steps{grid-template-columns:1fr}.step{min-height:0;display:grid;grid-template-columns:33px 1fr;column-gap:12px;padding:14px}.step-num{grid-row:span 2;margin:0}.step p{grid-column:2}.frame{display:block}.frame .btn{margin-top:12px;width:100%}.tools{grid-template-columns:1fr;gap:10px}.stats{gap:7px}.stat{padding:11px 9px}.stat strong{font-size:24px}.stat small{font-size:10px}.participant .btn{font-size:11px;padding:9px 11px}.foot{padding:0 18px}}
+    .embed-main{margin-top:-35px}.embed-shell{padding:0 18px 18px}.embed-shell iframe{display:block;width:100%;height:850px;min-height:530px;border:0;border-radius:12px;background:#fff}.embed-fallback{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 7px}.embed-fallback a{color:var(--deep2);font-weight:700}.embed-fallback.muted-help{opacity:.7}
+    @media(max-width:660px){.embed-shell{padding:0 5px 12px}.embed-shell iframe{border-radius:6px;min-height:550px}.embed-main{margin-top:-25px}.embed-main .panel-head{padding:19px 18px 10px}}
   </style>
 </head>
 <body>
   <nav class="nav" aria-label="Navigasi utama"><div class="nav-inner"><a class="brand" href="#utama" aria-label="Generasi Sunnah 2026"><span class="mark" aria-hidden="true"><img src="./sl-logo.png" alt=""></span><span><strong>GENERASI SUNNAH</strong><small>PROGRAM 2026</small></span></a><span class="tag">MINI CHECK-IN</span></div></nav>
   <header class="hero" id="utama"><div class="hero-inner"><div class="hero-row"><div class="hero-copy"><div class="eyebrow">Selamat Datang · 2026</div><h1>Semudah scan.<br>Secepat hadir.</h1><p>Portal kehadiran peserta Program Generasi Sunnah 2026 — akses peserta dan urusetia dalam satu tempat.</p></div><div class="hero-art"><img src="./logo-generasi-sunnah.png" alt="Logo lengkap Generasi Sunnah 2026 dengan pemanah, seni Islamik dan tulisan emas" width="1350" height="900" fetchpriority="high"></div></div><div class="dates"><span class="date"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><b>Batch 1</b> 28–29 November 2026</span><span class="date"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><b>Batch 2</b> 5–6 Disember 2026</span></div></div></header>
-  <main><article class="panel"><div class="panel-head"><div><h2>Mini Check-in</h2><p>Check-in dua hari untuk setiap batch, dikendalikan secara selamat melalui Google Apps Script.</p></div><span class="status" id="liveBadge">● Menunggu aktif</span></div>
-    <div class="tabs" role="tablist" aria-label="Jenis akses"><button class="tab" type="button" role="tab" id="tab-peserta" aria-controls="panel-peserta" aria-selected="true">◈ Peserta</button><button class="tab" type="button" role="tab" id="tab-urusetia" aria-controls="panel-urusetia" aria-selected="false">▤ Urusetia</button></div>
-    <section class="content" id="panel-peserta" role="tabpanel" aria-labelledby="tab-peserta"><h3 class="section-title">Check-in peserta</h3><p class="sub">Pada hari program, imbas QR yang dipaparkan oleh urusetia. Sediakan nombor resit dan empat digit terakhir telefon penjaga berdaftar.</p><div class="steps"><div class="step"><span class="step-num">1</span><strong>Imbas QR di lokasi</strong><p>QR aktif hanya untuk sesi yang dibuka urusetia.</p></div><div class="step"><span class="step-num">2</span><strong>Sahkan maklumat</strong><p>Masukkan nombor resit dan empat digit terakhir telefon penjaga.</p></div><div class="step"><span class="step-num">3</span><strong>Terima pengesahan</strong><p>Rekod kehadiran disimpan sekali bagi setiap hari program.</p></div></div><div class="frame"><div><strong id="publicHeading">Sistem check-in belum diaktifkan</strong><p id="publicInfo">Sambungan Web App perlu dikonfigurasi dahulu. Tiada kehadiran direkod melalui paparan ini buat masa ini.</p></div><button id="goPublic" class="btn" type="button" disabled>Buka check-in</button></div><div class="notice"><strong>Makluman keselamatan</strong>Jangan masukkan nombor telefon penuh di GitHub Pages. Maklumat check-in hanya dimasukkan di Web App rasmi Google Apps Script selepas ia diaktifkan.</div></section>
-    <section class="content hidden" id="panel-urusetia" role="tabpanel" aria-labelledby="tab-urusetia"><h3 class="section-title">Dashboard urusetia</h3><p class="sub">Petugas perlu log masuk menggunakan kunci akses yang diberikan oleh penganjur. Senarai peserta tidak dipaparkan di GitHub Pages.</p><div class="steps"><div class="step"><span class="step-num">1</span><strong>Log masuk</strong><p>Gunakan kunci akses urusetia; jangan kongsi secara terbuka.</p></div><div class="step"><span class="step-num">2</span><strong>Pilih sesi</strong><p>Buka sesi Hari 1 / Hari 2 mengikut tarikh program.</p></div><div class="step"><span class="step-num">3</span><strong>Check-in & QR</strong><p>Cari nama untuk tanda hadir atau papar QR lokasi kepada peserta.</p></div></div><div class="frame"><div><strong id="staffHeading">Dashboard belum diaktifkan</strong><p id="staffInfo">Akses urusetia hanya tersedia selepas Web App dipasang dan dilindungi dengan kunci khas.</p></div><button id="goStaff" class="btn" type="button" disabled>Buka dashboard</button></div></section>
+  <main class="embed-main"><article class="panel">
+    <div class="panel-head"><div><h2>Mini Check-in</h2><p>Peserta imbas QR untuk hadir, urusetia urus senarai peserta di sini.</p></div><span class="status" id="liveBadge">● Sesi mengikut tarikh program</span></div>
+    <div class="embed-shell">
+      <iframe id="checkinFrame" title="Mini Check-in Generasi Sunnah — Peserta dan Urusetia" referrerpolicy="origin" loading="eager" scrolling="no" allow="clipboard-write"></iframe>
+      <p class="embed-fallback" id="embedHelp">Jika paparan check-in tidak keluar pada browser, <a id="fallbackLink" href="#" target="_blank" rel="noopener noreferrer">buka paparan alternatif</a>.</p>
+    </div>
   </article></main>
   <footer class="foot"><span>© Generasi Sunnah 2026</span><span>GitHub Pages · Pendaftaran dan AutoCrat berasingan daripada check-in</span></footer>
   <script>
   'use strict';
-  // After deploying GAS: set only the public /exec URL below. Never add staff keys or participant data here.
-  const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
-  const validUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GS_WEBAPP_URL);
-  const tabs={peserta:document.getElementById('tab-peserta'),urusetia:document.getElementById('tab-urusetia')};
-  function switchTab(which){for(const [key,tab] of Object.entries(tabs)){const selected=key===which;tab.setAttribute('aria-selected',String(selected));document.getElementById('panel-'+key).classList.toggle('hidden',!selected)}}
-  tabs.peserta.addEventListener('click',()=>switchTab('peserta'));
-  tabs.urusetia.addEventListener('click',()=>switchTab('urusetia'));
-  if(validUrl){document.getElementById('liveBadge').textContent='● Web App tersedia';document.getElementById('publicHeading').textContent='Check-in melalui Web App rasmi';document.getElementById('publicInfo').textContent='Pada hari program, imbas QR urusetia untuk mengisi kod lokasi secara automatik.';document.getElementById('staffHeading').textContent='Dashboard urusetia tersedia';document.getElementById('staffInfo').textContent='Log masuk menggunakan kunci akses yang diberikan penganjur.';document.getElementById('goPublic').disabled=false;document.getElementById('goStaff').disabled=false;}
-  document.getElementById('goPublic').addEventListener('click',()=>{if(validUrl)location.href=GS_WEBAPP_URL+'?mode=peserta'});
-  document.getElementById('goStaff').addEventListener('click',()=>{if(validUrl)location.href=GS_WEBAPP_URL+'?mode=urusetia'});
+  // Public Apps Script /exec address only. Never store staff key or participant data here.
+  const GS_WEBAPP_URL='https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
+  const qs=new URLSearchParams(window.location.search), args=new URLSearchParams();
+  const mode=qs.get('mode')==='urusetia'?'urusetia':'peserta';
+  args.set('mode',mode);args.set('embed','1');
+  const session=qs.get('session')||'',code=qs.get('code')||'';
+  if(/^b[12]d[12]$/.test(session)&&/^[a-fA-F0-9]{12}$/.test(code)){args.set('session',session);args.set('code',code.toUpperCase())}
+  const directUrl=GS_WEBAPP_URL+'?'+args.toString();
+  const frame=document.getElementById('checkinFrame');
+  frame.src=directUrl;
+  document.getElementById('fallbackLink').href=GS_WEBAPP_URL+'?mode='+encodeURIComponent(mode)+(args.has('session')?'&session='+encodeURIComponent(session)+'&code='+encodeURIComponent(code.toUpperCase()):'');
+  window.addEventListener('message',event=>{
+    if(!/^https:\/\/(?:[a-z0-9-]+\.)?googleusercontent\.com$/.test(event.origin)&&event.origin!=='https://script.google.com')return;
+    if(event.source!==frame.contentWindow && event.source!==window && event.source!==null){
+      // GAS HtmlService may use a second nested iframe, so rely on the fixed origin and message kind.
+    }
+    const data=event.data;
+    if(!data||data.kind!=='GS_MINI_FRAME'||!Number.isFinite(data.height))return;
+    const height=Math.min(5800,Math.max(530,Math.round(data.height+32)));
+    frame.style.height=height+'px';
+    document.getElementById('embedHelp').classList.add('muted-help');
+  });
   </script>
 </body>
 </html>
