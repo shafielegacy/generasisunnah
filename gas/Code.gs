@@ -54,6 +54,52 @@ function gsPublicQuota_(){
   return {batches,updatedAt:Utilities.formatDate(new Date(),GS_CFG_.timezone,'yyyy-MM-dd HH:mm')};
 }
 
+/**
+ * Safe JSON API for a same-origin-approved server-side bridge.
+ * Client credentials are always POSTed, never placed in a URL.
+ * Only the listed existing functions may be called.
+ */
+function doPost(e) {
+  const output = obj => ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    const raw = e && e.postData && String(e.postData.contents || '');
+    if (!raw || raw.length > 4096) throw new Error('Permintaan tidak sah.');
+    const input = JSON.parse(raw);
+    if (!input || typeof input !== 'object' || !Array.isArray(input.args) || input.args.length > 4)
+      throw new Error('Format permintaan tidak sah.');
+    let result;
+    switch (String(input.action || '')) {
+      case 'gsPublicStatus':
+        if (input.args.length) throw new Error('Parameter tidak sah.');
+        result=gsPublicStatus(); break;
+      case 'gsSelfCheckin':
+        if (input.args.length!==1) throw new Error('Parameter tidak sah.');
+        result=gsSelfCheckin(input.args[0]); break;
+      case 'gsStaffLogin':
+        if (input.args.length!==1) throw new Error('Parameter tidak sah.');
+        result=gsStaffLogin(input.args[0]); break;
+      case 'gsStaffLogout':
+        if (input.args.length!==1) throw new Error('Parameter tidak sah.');
+        result=gsStaffLogout(input.args[0]); break;
+      case 'gsStaffSnapshot':
+        if (input.args.length!==3) throw new Error('Parameter tidak sah.');
+        result=gsStaffSnapshot(input.args[0],input.args[1],input.args[2]); break;
+      case 'gsStaffSetOpen':
+        if (input.args.length!==3) throw new Error('Parameter tidak sah.');
+        result=gsStaffSetOpen(input.args[0],input.args[1],input.args[2]); break;
+      case 'gsStaffCheckin':
+        if (input.args.length!==4) throw new Error('Parameter tidak sah.');
+        result=gsStaffCheckin(input.args[0],input.args[1],input.args[2],input.args[3]); break;
+      default: throw new Error('Tindakan tidak sah.');
+    }
+    return output({ok:true,data:result});
+  } catch (err) {
+    const message=err && err.message ? String(err.message).slice(0,160) : 'Ralat sistem.';
+    return output({ok:false,error:message});
+  }
+}
+
 /** Run once from the Apps Script editor, not from the public web application. */
 function gsSetupOnce_() {
   const ss = SpreadsheetApp.openById(GS_CFG_.spreadsheetId);
