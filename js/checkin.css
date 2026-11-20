@@ -22,3 +22,7 @@
 .gs-qr{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:13px;background:#f0f8f0;border-radius:12px}
 .gs-qr img,.gs-qr canvas{max-width:170px}.gs-container{max-width:720px;margin:auto}
 @media(max-width:680px){#gsNativeApp{padding:19px 15px}.gs-stat{padding:10px}.gs-stat strong{font-size:21px}.gs-header h2{font-size:23px}}
+
+/* Clear notice before venue QR/session is active */
+.gs-notice{background:#fff7e6;border:1px solid #ead49b;border-left:4px solid #ca9c38;border-radius:11px;color:#78551c;padding:14px 16px;font-size:13px;line-height:1.6;margin:11px 0 18px}
+.gs-notice.gs-notice-open{background:#eaf7ee;border-color:#badcc5;border-left-color:#2c8d62;color:#24583d}
