@@ -73,6 +73,7 @@ function render(){
  "<label class='gs-field' for='gsOperator'>Nama petugas</label><input class='gs-input' id='gsOperator' maxlength='60' placeholder='Urusetia Meja 1' autocomplete='off'><div id='gsPeople'></div></div><div id='gsStaffMessage' class='gs-msg'></div></section>";
  const sel=$('gsSession');for(const [k,v] of sessions){const o=make('option',v);o.value=k;sel.append(o);}sel.value=current;
  root.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+ $('gsReceipt').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
  $('gsPublicForm').addEventListener('submit',selfCheckin);$('gsLoginForm').addEventListener('submit',login);
  $('gsLogout').addEventListener('click',logout);$('gsSession').addEventListener('change',refreshStaff);
  $('gsRefresh').addEventListener('click',refreshStaff);$('gsToggle').addEventListener('click',toggle);
