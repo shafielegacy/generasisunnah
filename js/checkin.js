@@ -4,8 +4,8 @@
 'use strict';
 const BASE=String(window.GS_WEBAPP_URL||'');
 if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(BASE))return;
-const root=document.getElementById('gsNativeApp'),legacy=document.getElementById('gsLegacyPanel');
-if(!root||!legacy)return;
+const root=document.getElementById('gsNativeApp');
+if(!root)return;
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search), qrSession=qs.get('session')||'',qrCode=qs.get('code')||'';
 const hasQR=/^b[12]d[12]$/.test(qrSession)&&/^[a-fA-F0-9]{12}$/.test(qrCode);
@@ -140,10 +140,9 @@ async function toggle(){
 }
 async function logout(){const t=token;token='';snapshot=null;$('gsDashboard').classList.add('gs-hidden');$('gsLogin').classList.remove('gs-hidden');try{await api('gsStaffLogout',t);}catch(_){}}
 function printQR(){const e=$('gsQR').querySelector('canvas,img');if(!e)return;const url=e.tagName==='CANVAS'?e.toDataURL('image/png'):e.src;const w=window.open('','_blank');if(!w)return;const h=w.document.createElement('h1');h.textContent='Generasi Sunnah 2026';const image=w.document.createElement('img');image.src=url;image.style.width='360px';w.document.body.append(h,image);image.onload=()=>w.print();}
-api('gsPublicStatus').then(d=>{
- if(!d||!Array.isArray(d.sessions))return;pub=d.sessions;today=d.today||'';
- render();legacy.hidden=true;root.hidden=false;
- if(hasQR)location.hash='gsNativeApp';
- setInterval(()=>{if(currentTab==='urusetia'&&token)refreshStaff();else refreshPublic();},60000);
-}).catch(()=>{/* Never break legacy check-in if bridge is missing */});
+// Always keep the participant and staff forms on GitHub Pages. Never redirect to /exec.
+render();
+if(hasQR)location.hash='gsNativeApp';
+refreshPublic();
+setInterval(()=>{if(currentTab==='urusetia'&&token)refreshStaff();else refreshPublic();},60000);
 })();
