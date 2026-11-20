@@ -144,7 +144,7 @@ function gsSelfCheckin(data){
 }
 function gsCheckKey_(key){
   const saved=String(gsProperties_().getProperty('GS_STAFF_KEY')||'');
-  if(saved.length<20)throw new Error('Kunci urusetia belum dikonfigurasi.');
+  if(saved.length<8)throw new Error('Kunci urusetia belum dikonfigurasi (minimum 8 aksara).');
   const cache=CacheService.getScriptCache();
   const attempts=Number(cache.get('GS_STAFF_FAILED')||0);
   if(attempts>=15)throw new Error('Login dikunci sementara. Cuba selepas 15 minit.');
