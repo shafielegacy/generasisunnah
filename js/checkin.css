@@ -1,0 +1,24 @@
+
+#gsNativeApp[hidden],#gsNativeApp .gs-hidden,#gsLegacyPanel[hidden]{display:none!important}
+#gsNativeApp{background:#fff;padding:25px 31px;border-radius:19px;border:1px solid #dfebdf;margin-top:18px;box-shadow:0 12px 46px rgba(6,48,31,.08)}
+.gs-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:16px 0 23px;padding:6px;background:#edf3ee;border-radius:12px}
+.gs-tabs button{border:0;border-radius:9px;background:transparent;color:#47685a;padding:12px;font-weight:750;cursor:pointer}
+.gs-tabs button.active{background:#12513e;color:white}
+.gs-header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center}
+.gs-header h2{font:600 26px Georgia,serif;color:#093f35;margin:0}
+.gs-head-note,.gs-help{font-size:12px;color:#61756a}
+.gs-input{display:block;width:100%;padding:12px 14px;border:1px solid #c7d7ca;border-radius:10px;color:#173b2c;background:#fff;font:inherit;min-height:45px}
+.gs-field{display:block;font-weight:700;font-size:12px;margin:13px 0 5px;color:#25473b}
+.gs-button{background:#12684e;color:white;padding:11px 15px;border:0;border-radius:10px;font:inherit;font-size:13px;font-weight:750;cursor:pointer}
+.gs-button:disabled{opacity:.42;cursor:not-allowed}.gs-button.alt{background:#e7f1e9;color:#164b38}.gs-button.wide{width:100%;margin-top:15px}
+.gs-msg{font-size:13px;background:#ecf7ef;color:#225837;border-radius:9px;padding:11px 13px;margin:13px 0}
+.gs-msg:empty{display:none}.gs-msg.error{background:#fff0ee;color:#a2352b}
+.gs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.gs-stat{border:1px solid #e1eae1;background:#f3f8f3;border-radius:10px;padding:12px}
+.gs-stat strong{display:block;font-size:24px;color:#093f35}.gs-stat small{color:#63776d;font-size:11px}
+.gs-actions{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}
+.gs-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e4ece6;padding:10px 0}
+.gs-row strong{font-size:13px;color:#173b2c}.gs-row small{display:block;color:#66796e;font-size:11px}
+.gs-qr{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:13px;background:#f0f8f0;border-radius:12px}
+.gs-qr img,.gs-qr canvas{max-width:170px}.gs-container{max-width:720px;margin:auto}
+@media(max-width:680px){#gsNativeApp{padding:19px 15px}.gs-stat{padding:10px}.gs-stat strong{font-size:21px}.gs-header h2{font-size:23px}}

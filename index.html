@@ -39,6 +39,9 @@
     .quota-meter span{height:100%;display:block;background:linear-gradient(90deg,#118263,#d6ad55);border-radius:99px;transition:width .4s ease}
     @media(max-width:720px){.quota-grid{grid-template-columns:1fr}.quota-panel{padding:20px 17px}.quota-top h2{font-size:21px}.quota-digits strong{font-size:22px}.quota-card{padding:14px}}
   </style>
+<link rel="stylesheet" href="./js/checkin.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
+<script defer src="./js/checkin.js"></script>
 </head>
 <body>
   <nav class="nav" aria-label="Navigasi utama"><div class="nav-inner"><a class="brand" href="#utama" aria-label="Generasi Sunnah 2026"><span class="mark" aria-hidden="true"><img src="./sl-logo.png" alt=""></span><span><strong>GENERASI SUNNAH</strong><small>PROGRAM 2026</small></span></a><span class="tag">MINI CHECK-IN</span></div></nav>
@@ -62,7 +65,8 @@
         </div>
       </div>
     </section>
-    <article class="panel"><div class="panel-head"><div><h2>Mini Check-in</h2><p>Check-in dua hari untuk setiap batch, dikendalikan secara selamat melalui Google Apps Script.</p></div><span class="status" id="liveBadge">● Menunggu aktif</span></div>
+    <div id="gsNativeApp" hidden></div>
+    <article class="panel" id="gsLegacyPanel"><div class="panel-head"><div><h2>Mini Check-in</h2><p>Check-in dua hari untuk setiap batch, dikendalikan secara selamat melalui Google Apps Script.</p></div><span class="status" id="liveBadge">● Menunggu aktif</span></div>
     <div class="tabs" role="tablist" aria-label="Jenis akses"><button class="tab" type="button" role="tab" id="tab-peserta" aria-controls="panel-peserta" aria-selected="true">◈ Peserta</button><button class="tab" type="button" role="tab" id="tab-urusetia" aria-controls="panel-urusetia" aria-selected="false">▤ Urusetia</button></div>
     <section class="content" id="panel-peserta" role="tabpanel" aria-labelledby="tab-peserta"><h3 class="section-title">Check-in peserta</h3><p class="sub">Pada hari program, imbas QR yang dipaparkan oleh urusetia. Sediakan nombor resit dan empat digit terakhir telefon penjaga berdaftar.</p><div class="steps"><div class="step"><span class="step-num">1</span><strong>Imbas QR di lokasi</strong><p>QR aktif hanya untuk sesi yang dibuka urusetia.</p></div><div class="step"><span class="step-num">2</span><strong>Sahkan maklumat</strong><p>Masukkan nombor resit dan empat digit terakhir telefon penjaga.</p></div><div class="step"><span class="step-num">3</span><strong>Terima pengesahan</strong><p>Rekod kehadiran disimpan sekali bagi setiap hari program.</p></div></div><div class="frame"><div><strong id="publicHeading">Sistem check-in belum diaktifkan</strong><p id="publicInfo">Sambungan Web App perlu dikonfigurasi dahulu. Tiada kehadiran direkod melalui paparan ini buat masa ini.</p></div><button id="goPublic" class="btn" type="button" disabled>Buka check-in</button></div><div class="notice"><strong>Makluman keselamatan</strong>Jangan masukkan nombor telefon penuh di GitHub Pages. Maklumat check-in hanya dimasukkan di Web App rasmi Google Apps Script selepas ia diaktifkan.</div></section>
     <section class="content hidden" id="panel-urusetia" role="tabpanel" aria-labelledby="tab-urusetia"><h3 class="section-title">Dashboard urusetia</h3><p class="sub">Petugas perlu log masuk menggunakan kunci akses yang diberikan oleh penganjur. Senarai peserta tidak dipaparkan di GitHub Pages.</p><div class="steps"><div class="step"><span class="step-num">1</span><strong>Log masuk</strong><p>Gunakan kunci akses urusetia; jangan kongsi secara terbuka.</p></div><div class="step"><span class="step-num">2</span><strong>Pilih sesi</strong><p>Buka sesi Hari 1 / Hari 2 mengikut tarikh program.</p></div><div class="step"><span class="step-num">3</span><strong>Check-in & QR</strong><p>Cari nama untuk tanda hadir atau papar QR lokasi kepada peserta.</p></div></div><div class="frame"><div><strong id="staffHeading">Dashboard belum diaktifkan</strong><p id="staffInfo">Akses urusetia hanya tersedia selepas Web App dipasang dan dilindungi dengan kunci khas.</p></div><button id="goStaff" class="btn" type="button" disabled>Buka dashboard</button></div></section>
@@ -104,6 +108,8 @@
     setInterval(gsRefreshQuota,120000);
   });
 
+  // Fill after deploying the bridge. Keep empty until then: legacy check-in continues safely.
+  window.GS_API_URL = '';
   // After deploying GAS: set only the public /exec URL below. Never add staff keys or participant data here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
   const validUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GS_WEBAPP_URL);
