@@ -43,7 +43,7 @@ function gsPublicQuota_(){
   if(!tab)throw new Error('Dashboard kuota tidak tersedia.');
   const rows=tab.getRange(3,1,2,5).getDisplayValues();
   const batches=rows.map((r,i)=>{
-    if(!/^Batch\\s*[12]/i.test(String(r[0]||'')))throw new Error('Format batch tidak dijangka.');
+    if(!/^Batch\s*[12]/i.test(String(r[0]||'')))throw new Error('Format batch tidak dijangka.');
     const toInt=x=>{const n=Number(String(x).replace(/,/g,''));if(!Number.isInteger(n)||n<0)return null;return n;};
     const registered=toInt(r[1]),quota=toInt(r[2]),remaining=toInt(r[3]);
     if([registered,quota,remaining].some(v=>v===null))throw new Error('Data kuota tidak sah.');
