@@ -108,10 +108,9 @@
     setInterval(gsRefreshQuota,120000);
   });
 
-  // Fill after deploying the bridge. Keep empty until then: legacy check-in continues safely.
-  window.GS_API_URL = '';
-  // After deploying GAS: set only the public /exec URL below. Never add staff keys or participant data here.
+  // Public Apps Script URL only. Passwords and personal data are never stored here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
+  window.GS_WEBAPP_URL = GS_WEBAPP_URL;
   const validUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GS_WEBAPP_URL);
   const tabs={peserta:document.getElementById('tab-peserta'),urusetia:document.getElementById('tab-urusetia')};
   function switchTab(which){for(const [key,tab] of Object.entries(tabs)){const selected=key===which;tab.setAttribute('aria-selected',String(selected));document.getElementById('panel-'+key).classList.toggle('hidden',!selected)}}

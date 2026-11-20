@@ -22,6 +22,18 @@ const GS_CFG_ = Object.freeze({
 });
 
 function doGet(e) {
+  // An opaque 128-bit request ID is the ONLY value placed in a public GET URL.
+  // Staff passphrases, session tokens, participant data and check-in details are POST only.
+  if(e && e.parameter && e.parameter.view==='rpc'){
+    const rid=String(e.parameter.rid||'').toLowerCase();
+    if(!/^[0-9a-f]{32}$/.test(rid))
+      return ContentService.createTextOutput('/* Invalid request ID */').setMimeType(ContentService.MimeType.JAVASCRIPT);
+    const result=CacheService.getScriptCache().get('GS_RPC_'+rid);
+    const data=result?{ready:true,result:JSON.parse(result)}:{ready:false};
+    const json=JSON.stringify(data).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+    const js='window.GS_PORTAL_RPC_RESULT&&window.GS_PORTAL_RPC_RESULT('+JSON.stringify(rid)+','+json+');';
+    return ContentService.createTextOutput(js).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   if(e && e.parameter && e.parameter.view==='quota'){
     const publicData=gsPublicQuota_();
     return ContentService.createTextOutput('window.GSQuotaReceive('+JSON.stringify(publicData)+');')
@@ -58,13 +70,22 @@ function gsPublicQuota_(){
  * Client credentials are always POSTed, never placed in a URL.
  * Only the listed existing functions may be called.
  */
+function gsRpcStore_(id,data){
+  if(!id)return;
+  const json=JSON.stringify(data);
+  const safe=json.length<=90000?json:JSON.stringify({ok:false,error:'Jawapan terlalu besar.'});
+  CacheService.getScriptCache().put('GS_RPC_'+id,safe,90);
+}
 function doPost(e) {
   const output = obj => ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+  let rpcId='';
   try {
     const raw = e && e.postData && String(e.postData.contents || '');
     if (!raw || raw.length > 4096) throw new Error('Permintaan tidak sah.');
     const input = JSON.parse(raw);
+    if(input && /^[a-f0-9]{32}$/i.test(String(input.rpcId||'')))
+      rpcId=String(input.rpcId).toLowerCase();
     if (!input || typeof input !== 'object' || !Array.isArray(input.args) || input.args.length > 4)
       throw new Error('Format permintaan tidak sah.');
     let result;
@@ -92,10 +113,14 @@ function doPost(e) {
         result=gsStaffCheckin(input.args[0],input.args[1],input.args[2],input.args[3]); break;
       default: throw new Error('Tindakan tidak sah.');
     }
-    return output({ok:true,data:result});
+    const reply={ok:true,data:result};
+    gsRpcStore_(rpcId,reply);
+    return output(reply);
   } catch (err) {
     const message=err && err.message ? String(err.message).slice(0,160) : 'Ralat sistem.';
-    return output({ok:false,error:message});
+    const reply={ok:false,error:message};
+    gsRpcStore_(rpcId,reply);
+    return output(reply);
   }
 }
 
