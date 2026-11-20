@@ -59,8 +59,8 @@ function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',
 function render(){
  root.innerHTML="<div class='gs-header'><h2>Mini Check-in</h2><span class='gs-head-note' id='gsState'>Check-in ditutup</span></div>"+
  "<div class='gs-tabs'><button data-tab='peserta' class='active'>◈ Peserta</button><button data-tab='urusetia'>▤ Urusetia</button></div>"+
- "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
- "<form id='gsPublicForm' autocomplete='off'><label class='gs-field' for='gsReceipt'>Nombor resit peserta</label><input class='gs-input' required id='gsReceipt' maxlength='24' autocapitalize='characters' autocomplete='off' placeholder='Contoh: GS26_R0001'>"+
+ "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Check-in hanya dibuka pada hari program selepas urusetia membuka sesi.</div><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
+ "<form id='gsPublicForm' autocomplete='off'><label class='gs-field' for='gsReceipt'>5 aksara terakhir nombor resit</label><input class='gs-input' required id='gsReceipt' maxlength='5' minlength='5' pattern='[Rr][0-9]{4}' autocapitalize='characters' autocomplete='off' placeholder='Contoh: R0049'><p class='gs-help'>Taip R0049 sahaja, tak perlu GS26_.</p>"+
  "<label class='gs-field' for='gsPhone'>4 digit terakhir telefon penjaga</label><input class='gs-input' required id='gsPhone' maxlength='4' pattern='[0-9]{4}' inputmode='numeric' autocomplete='off' placeholder='••••'>"+
  "<button class='gs-button wide' id='gsSubmit' disabled>Sahkan kehadiran</button></form><div id='gsPublicMessage' class='gs-msg'></div><p class='gs-help'>Kalau tiada resit, minta urusetia bantu check-in.</p></section>"+
  "<section id='gsStaff' class='gs-container gs-hidden'><div id='gsLogin'><h3>Log masuk urusetia</h3><form id='gsLoginForm'><label class='gs-field' for='gsKey'>Kunci urusetia</label><input class='gs-input' required minlength='8' type='password' id='gsKey' autocomplete='off'><button class='gs-button wide' id='gsLoginButton'>Log masuk</button></form></div>"+
@@ -83,15 +83,30 @@ function render(){
 }
 function updatePublic(){
  const s=pub.find(x=>x.key===current),open=!!s?.open;
- $('gsState').textContent=open?'✓ Check-in dibuka':'Check-in ditutup';
+ const anyOpen=pub.some(s=>s.open);
+ $('gsState').textContent=anyOpen?'✓ Sesi check-in tersedia':'Check-in belum dibuka';
  $('gsInstruction').textContent=hasQR?'QR: '+(sessions.find(x=>x[0]===current)?.[1]||'Sesi'):'Imbas QR rasmi di lokasi program supaya sesi dipilih automatik.';
+ const notice=$('gsNotice');
+ notice.textContent=!anyOpen
+  ?'Kehadiran belum boleh disahkan. Check-in hanya dibuka pada 28–29 November atau 5–6 Disember 2026 selepas urusetia mengaktifkan sesi. Status DIBUKA di atas merujuk pendaftaran.'
+  : !hasQR?'Sesi check-in tersedia. Sila imbas QR rasmi di lokasi program untuk mengesahkan kehadiran.'
+  : !open?'QR ini tidak aktif atau sesi sudah ditutup. Minta QR terkini daripada urusetia.'
+  :'Sesi check-in dibuka. Masukkan kod resit pendek dan 4 digit telefon penjaga.';
+ notice.classList.toggle('gs-notice-open',anyOpen&&open&&hasQR);
  $('gsSubmit').disabled=submitting||!hasQR||!open;
 }
 async function refreshPublic(){try{const d=await api('gsPublicStatus');pub=d.sessions||[];today=d.today||'';updatePublic();}catch(err){message('gsPublicMessage',err.message,true);$('gsSubmit').disabled=true;}}
 async function selfCheckin(e){
  e.preventDefault();if(submitting||!hasQR)return;submitting=true;updatePublic();
  message('gsPublicMessage','Menyimpan kehadiran…');
- try{const d=await api('gsSelfCheckin',{session:current,code:qrCode.toUpperCase(),receipt:$('gsReceipt').value,last4:$('gsPhone').value});message('gsPublicMessage',d.message||'Kehadiran direkod.');$('gsReceipt').value='';$('gsPhone').value='';}
+ try{
+  const shortReceipt=$('gsReceipt').value.trim().toUpperCase();
+  if(!/^R\d{4}$/.test(shortReceipt))throw new Error('Masukkan kod resit seperti R0049.');
+  // All official 2026 receipts are GS26_R####, validated against the current roster.
+  const fullReceipt='GS26_'+shortReceipt;
+  const d=await api('gsSelfCheckin',{session:current,code:qrCode.toUpperCase(),receipt:fullReceipt,last4:$('gsPhone').value});
+  message('gsPublicMessage',d.message||'Kehadiran direkod.');$('gsReceipt').value='';$('gsPhone').value='';
+ }
  catch(err){message('gsPublicMessage',err.message,true);}finally{submitting=false;updatePublic();}
 }
 async function login(e){
