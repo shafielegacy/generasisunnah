@@ -21,11 +21,37 @@ const GS_CFG_ = Object.freeze({
   ]
 });
 
-function doGet() {
+function doGet(e) {
+  if(e && e.parameter && e.parameter.view==='quota'){
+    const publicData=gsPublicQuota_();
+    return ContentService.createTextOutput('window.GSQuotaReceive('+JSON.stringify(publicData)+');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return HtmlService.createHtmlOutputFromFile('Checkin')
     .setTitle('Generasi Sunnah 2026 — Check-in')
     .addMetaTag('viewport','width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+
+/**
+ * PUBLIC AGGREGATE ONLY: Source 'DASHBOARD KUOTA' A3:E4.
+ * Never return participant names, receipts, contact details or access codes.
+ */
+function gsPublicQuota_(){
+  const tab=SpreadsheetApp.openById(GS_CFG_.spreadsheetId).getSheetByName('DASHBOARD KUOTA');
+  if(!tab)throw new Error('Dashboard kuota tidak tersedia.');
+  const rows=tab.getRange(3,1,2,5).getDisplayValues();
+  const batches=rows.map((r,i)=>{
+    if(!/^Batch\\s*[12]/i.test(String(r[0]||'')))throw new Error('Format batch tidak dijangka.');
+    const toInt=x=>{const n=Number(String(x).replace(/,/g,''));if(!Number.isInteger(n)||n<0)return null;return n;};
+    const registered=toInt(r[1]),quota=toInt(r[2]),remaining=toInt(r[3]);
+    if([registered,quota,remaining].some(v=>v===null))throw new Error('Data kuota tidak sah.');
+    const raw=String(r[4]||'').toUpperCase();
+    const status=raw.includes('DITUTUP')?'DITUTUP':raw.includes('PENUH')?'PENUH':raw.includes('DIBUKA')?'DIBUKA':'SEMAKAN';
+    return {batch:i+1,registered,quota,remaining,status};
+  });
+  return {batches,updatedAt:Utilities.formatDate(new Date(),GS_CFG_.timezone,'yyyy-MM-dd HH:mm')};
 }
 
 /** Run once from the Apps Script editor, not from the public web application. */
