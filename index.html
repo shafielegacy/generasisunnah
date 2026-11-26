@@ -23,6 +23,9 @@
     .quota-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:15px}
     .quota-top h2{font:600 24px Georgia,serif;color:var(--deep);margin:0}
     .quota-updated{font-size:11px;color:var(--muted);margin:0}
+    .quota-retry{font-size:11px;font-weight:750;color:var(--deep);background:#eef5ef;border:1px solid #d5e2d8;border-radius:9px;padding:6px 10px;white-space:nowrap}
+    .quota-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    @media(max-width:720px){.quota-meta{justify-content:flex-start}}
     .quota-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
     .quota-card{background:#fafbf7;border:1px solid #dfe9db;border-radius:14px;padding:17px 19px}
     .quota-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
@@ -50,18 +53,18 @@
     <section class="quota-panel" aria-label="Status pendaftaran semasa" id="quotaStatus">
       <div class="quota-top">
         <h2>Status Pendaftaran Semasa</h2>
-        <p class="quota-updated" id="quotaUpdated" aria-live="polite">Rekod disemak: 20 November 2026</p>
+        <div class="quota-meta"><p class="quota-updated" id="quotaUpdated" aria-live="polite">Sedang memuat data pendaftaran terkini…</p><button type="button" class="quota-retry" id="quotaRetry">Muat semula</button></div>
       </div>
       <div class="quota-grid">
         <div class="quota-card" data-quota-batch="1">
-          <div class="quota-card-head"><div><h3>Batch 1</h3><p class="quota-date">28–29 November 2026</p></div><span class="quota-status" id="quotaStatus1">● DIBUKA</span></div>
-          <div class="quota-digits"><div><small>Berdaftar</small><strong id="quotaReg1">29</strong></div><div><small>Kuota</small><strong id="quotaTotal1">50</strong></div><div><small>Baki tempat</small><strong id="quotaLeft1">21</strong></div></div>
-          <div class="quota-meter" aria-hidden="true"><span id="quotaMeter1" style="width:58%"></span></div>
+          <div class="quota-card-head"><div><h3>Batch 1</h3><p class="quota-date">28–29 November 2026</p></div><span class="quota-status closed" id="quotaStatus1">● MENUNGGU DATA</span></div>
+          <div class="quota-digits"><div><small>Berdaftar</small><strong id="quotaReg1">—</strong></div><div><small>Kuota</small><strong id="quotaTotal1">—</strong></div><div><small>Baki tempat</small><strong id="quotaLeft1">—</strong></div></div>
+          <div class="quota-meter" aria-hidden="true"><span id="quotaMeter1" style="width:0%"></span></div>
         </div>
         <div class="quota-card" data-quota-batch="2">
-          <div class="quota-card-head"><div><h3>Batch 2</h3><p class="quota-date">5–6 Disember 2026</p></div><span class="quota-status" id="quotaStatus2">● DIBUKA</span></div>
-          <div class="quota-digits"><div><small>Berdaftar</small><strong id="quotaReg2">33</strong></div><div><small>Kuota</small><strong id="quotaTotal2">50</strong></div><div><small>Baki tempat</small><strong id="quotaLeft2">17</strong></div></div>
-          <div class="quota-meter" aria-hidden="true"><span id="quotaMeter2" style="width:66%"></span></div>
+          <div class="quota-card-head"><div><h3>Batch 2</h3><p class="quota-date">5–6 Disember 2026</p></div><span class="quota-status closed" id="quotaStatus2">● MENUNGGU DATA</span></div>
+          <div class="quota-digits"><div><small>Berdaftar</small><strong id="quotaReg2">—</strong></div><div><small>Kuota</small><strong id="quotaTotal2">—</strong></div><div><small>Baki tempat</small><strong id="quotaLeft2">—</strong></div></div>
+          <div class="quota-meter" aria-hidden="true"><span id="quotaMeter2" style="width:0%"></span></div>
         </div>
       </div>
     </section>
@@ -71,14 +74,18 @@
   <script>
   'use strict';
 
-  // Only aggregate registration counts are returned; never expose roster or staff data.
+  // Quota is LIVE from GAS, never a hard-coded registration snapshot.
+  // If a mobile browser cannot load the GAS script, show unavailable, not stale counts.
+  let gsQuotaResponses=0,gsQuotaLoaded=false,gsQuotaRequest=null,gsQuotaTimer=null;
+  let gsQuotaRetryTimer=null,gsQuotaRetryCount=0,gsQuotaLastAttempt=0;
+  const gsQuotaUpdated=document.getElementById('quotaUpdated');
+  const gsQuotaValid=x=>Number.isInteger(x)&&x>=0&&x<=100000;
   window.GSQuotaReceive=function(data){
     if(!data||!Array.isArray(data.batches)||data.batches.length!==2)return;
+    if(data.batches.some(row=>!row||![1,2].includes(row.batch)||![row.registered,row.quota,row.remaining].every(gsQuotaValid)))return;
+    if(new Set(data.batches.map(row=>row.batch)).size!==2)return;
     for(const row of data.batches){
-      if(!row||![1,2].includes(row.batch))return;
       const n=row.batch;
-      const valid=x=>Number.isInteger(x)&&x>=0&&x<=100000;
-      if(!valid(row.registered)||!valid(row.quota)||!valid(row.remaining))return;
       document.getElementById('quotaReg'+n).textContent=String(row.registered);
       document.getElementById('quotaTotal'+n).textContent=String(row.quota);
       document.getElementById('quotaLeft'+n).textContent=String(row.remaining);
@@ -88,25 +95,60 @@
       badge.classList.toggle('closed',state!=='DIBUKA');
       document.getElementById('quotaMeter'+n).style.width=(row.quota?Math.min(100,row.registered/row.quota*100):0)+'%';
     }
+    gsQuotaResponses++;
+    gsQuotaLoaded=true;
+    gsQuotaRetryCount=0;
+    if(gsQuotaRetryTimer){clearTimeout(gsQuotaRetryTimer);gsQuotaRetryTimer=null;}
     const t=String(data.updatedAt||'');
-    document.getElementById('quotaUpdated').textContent=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(t)?'Dikemas kini: '+t+' (MYT)':'Dikemas kini daripada spreadsheet';
+    gsQuotaUpdated.textContent=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(t)?'Dikemas kini: '+t+' (MYT)':'Dikemas kini daripada spreadsheet';
   };
+  function gsQuotaFailure(){
+    gsQuotaUpdated.textContent=gsQuotaLoaded
+      ?'Sambungan terganggu. Data terakhir mungkin tidak terkini — tekan Muat semula.'
+      :'Data semasa tidak dapat dimuat. Tekan Muat semula untuk cuba lagi.';
+    if(gsQuotaRetryCount<2&&!gsQuotaRetryTimer){
+      gsQuotaRetryCount++;
+      gsQuotaRetryTimer=setTimeout(()=>{gsQuotaRetryTimer=null;gsRefreshQuota();},gsQuotaRetryCount*5000);
+    }
+  }
   function gsRefreshQuota(){
-    const el=document.createElement('script');
+    if(gsQuotaRequest)return;
+    if(gsQuotaRetryTimer){clearTimeout(gsQuotaRetryTimer);gsQuotaRetryTimer=null;}
+    gsQuotaLastAttempt=Date.now();
+    gsQuotaUpdated.textContent=gsQuotaLoaded?'Mengemas kini data pendaftaran…':'Sedang memuat data pendaftaran terkini…';
+    const el=document.createElement('script'),before=gsQuotaResponses;
+    gsQuotaRequest=el;
+    let finished=false;
+    const finish=ok=>{
+      if(finished)return;
+      finished=true;
+      clearTimeout(gsQuotaTimer);
+      el.remove();
+      gsQuotaRequest=null;
+      if(!ok)gsQuotaFailure();
+    };
     el.src=GS_WEBAPP_URL+'?view=quota&_='+Date.now();
     el.async=true;
-    el.addEventListener('load',()=>el.remove());
-    el.addEventListener('error',()=>el.remove());
+    el.addEventListener('load',()=>finish(gsQuotaResponses>before));
+    el.addEventListener('error',()=>finish(false));
+    gsQuotaTimer=setTimeout(()=>finish(gsQuotaResponses>before),12000);
     document.head.appendChild(el);
   }
-  window.addEventListener('load',()=>{
+  document.getElementById('quotaRetry').addEventListener('click',()=>{
+    gsQuotaRetryCount=0;
     gsRefreshQuota();
-    setInterval(gsRefreshQuota,120000);
   });
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&Date.now()-gsQuotaLastAttempt>30000)gsRefreshQuota();
+  });
+  window.addEventListener('pageshow',e=>{if(e.persisted)gsRefreshQuota();});
 
   // Public Apps Script URL only. Passwords and personal data are never stored here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
   window.GS_WEBAPP_URL = GS_WEBAPP_URL;
+  // Run immediately after the HTML is parsed, without waiting for large images/CDN scripts.
+  gsRefreshQuota();
+  setInterval(gsRefreshQuota,120000);
   </script>
 </body>
 </html>
