@@ -39,6 +39,10 @@ function doGet(e) {
     return ContentService.createTextOutput('window.GSQuotaReceive('+JSON.stringify(publicData)+');')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
+  // Public aggregate HTML fallback for browsers that block cross-site JSONP.
+  if(e && e.parameter && e.parameter.view==='quota-page'){
+    return gsPublicQuotaPage_(e.parameter.nonce);
+  }
   return HtmlService.createHtmlOutputFromFile('Checkin')
     .setTitle('Generasi Sunnah 2026 — Check-in')
     .addMetaTag('viewport','width=device-width, initial-scale=1');
@@ -63,6 +67,43 @@ function gsPublicQuota_(){
     return {batch:i+1,registered,quota,remaining,status};
   });
   return {batches,updatedAt:Utilities.formatDate(new Date(),GS_CFG_.timezone,'yyyy-MM-dd HH:mm')};
+}
+
+/**
+ * Mobile fallback: server-rendered public aggregate, no registration/attendance writes.
+ * A 128-bit request nonce is reflected only after strict hex validation.
+ */
+function gsPublicQuotaPage_(requestNonce){
+  const data=gsPublicQuota_();
+  const nonce=/^[a-f0-9]{32}$/.test(String(requestNonce||''))?String(requestNonce):'';
+  const cards=data.batches.map(row=>{
+    const status=['DIBUKA','PENUH','DITUTUP'].includes(row.status)?row.status:'SEMAKAN';
+    return '<section class="card"><h2>Batch '+row.batch+' <small>'+status+'</small></h2>'
+      +'<div class="stats"><div><span>Berdaftar</span><strong>'+row.registered+'</strong></div>'
+      +'<div><span>Kuota</span><strong>'+row.quota+'</strong></div>'
+      +'<div><span>Baki tempat</span><strong>'+row.remaining+'</strong></div></div></section>';
+  }).join('');
+  const payload=JSON.stringify({kind:'GS_QUOTA_PAGE_V1',nonce,data})
+    .replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+  const html='<!doctype html><html lang="ms"><head><meta charset="utf-8">'
+    +'<meta name="viewport" content="width=device-width, initial-scale=1">'
+    +'<title>Generasi Sunnah — Status Pendaftaran Semasa</title>'
+    +'<style>body{font:15px system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:18px;background:#f5f7f3;color:#103f30}'
+    +'.wrap{max-width:860px;margin:auto}h1{font-size:23px;margin:0 0 6px}h2{font-size:17px;margin:0 0 14px}'
+    +'.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:#fff;border:1px solid #dce7dd;border-radius:14px;padding:16px}'
+    +'.card small{font-size:12px;background:#eaf2e9;border-radius:12px;padding:4px 9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}'
+    +'.stats span{display:block;font-size:11px;color:#617468}.stats strong{font-size:24px}.foot{color:#617468;font-size:12px;margin-top:12px}'
+    +'button{margin-top:12px;border:0;border-radius:9px;background:#116b51;color:#fff;padding:10px 16px;font-weight:700}'
+    +'@media(max-width:540px){.grid{grid-template-columns:1fr}.stats strong{font-size:22px}}</style></head><body>'
+    +'<main class="wrap"><h1>Status Pendaftaran Semasa</h1><p>Generasi Sunnah 2026 — data rasmi daripada spreadsheet.</p>'
+    +'<div class="grid">'+cards+'</div><p class="foot">Dikemas kini: '+data.updatedAt+' (MYT)</p>'
+    +'<button type="button" onclick="location.reload()">Muat semula</button></main>'
+    +'<script>try{window.top.postMessage('+payload+',"https://shafielegacy.github.io")}catch(e){}'
+    +'</scr'+'ipt></body></html>';
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('Generasi Sunnah 2026 — Status Pendaftaran')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport','width=device-width, initial-scale=1');
 }
 
 /**
