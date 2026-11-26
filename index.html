@@ -103,12 +103,19 @@
     gsQuotaUpdated.textContent=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(t)?'Dikemas kini: '+t+' (MYT)':'Dikemas kini daripada spreadsheet';
   };
   function gsQuotaFailure(){
+    if(!gsQuotaLoaded){
+      for(const n of [1,2]){
+        const badge=document.getElementById('quotaStatus'+n);
+        badge.textContent='● DATA TIDAK TERSEDIA';
+        badge.classList.add('closed');
+      }
+    }
     gsQuotaUpdated.textContent=gsQuotaLoaded
       ?'Sambungan terganggu. Data terakhir mungkin tidak terkini — tekan Muat semula.'
-      :'Data semasa tidak dapat dimuat. Tekan Muat semula untuk cuba lagi.';
-    if(gsQuotaRetryCount<2&&!gsQuotaRetryTimer){
+      :'Sambungan ke data pendaftaran gagal. Tekan Muat semula untuk cuba lagi.';
+    if(gsQuotaRetryCount<1&&!gsQuotaRetryTimer){
       gsQuotaRetryCount++;
-      gsQuotaRetryTimer=setTimeout(()=>{gsQuotaRetryTimer=null;gsRefreshQuota();},gsQuotaRetryCount*5000);
+      gsQuotaRetryTimer=setTimeout(()=>{gsQuotaRetryTimer=null;gsRefreshQuota();},3000);
     }
   }
   function gsRefreshQuota(){
