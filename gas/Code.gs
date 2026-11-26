@@ -106,8 +106,8 @@ function doPost(e) {
         if (input.args.length!==3) throw new Error('Parameter tidak sah.');
         result=gsStaffSnapshot(input.args[0],input.args[1],input.args[2]); break;
       case 'gsStaffSetOpen':
-        if (input.args.length!==3) throw new Error('Parameter tidak sah.');
-        result=gsStaffSetOpen(input.args[0],input.args[1],input.args[2]); break;
+        if (input.args.length!==3 && input.args.length!==4) throw new Error('Parameter tidak sah.');
+        result=gsStaffSetOpen(input.args[0],input.args[1],input.args[2],input.args[3]); break;
       case 'gsStaffCheckin':
         if (input.args.length!==4) throw new Error('Parameter tidak sah.');
         result=gsStaffCheckin(input.args[0],input.args[1],input.args[2],input.args[3]); break;
@@ -150,19 +150,22 @@ function gsSession_(key) {
   return result;
 }
 function gsProperties_(){return PropertiesService.getScriptProperties();}
-function gsOpen_(key){return gsProperties_().getProperty('GS_OPEN_'+key)==='true';}
-function gsCode_(key){return gsProperties_().getProperty('GS_CODE_'+key)||'';}
+// New namespace: first deployment of manual control starts CLOSED.
+function gsOpen_(key){
+  return gsProperties_().getProperty('GS_OPEN_MANUAL_'+key)==='true' && /^[A-F0-9]{12}$/.test(gsCode_(key));
+}
+function gsCode_(key){return gsProperties_().getProperty('GS_CODE_MANUAL_'+key)||'';}
 function gsHash_(str){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(str)).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');}
 function gsSafeEqual_(a,b){
   const x=gsHash_(String(a||'')),y=gsHash_(String(b||'')); let diff=0;
   for(let i=0;i<x.length;i++) diff|=x.charCodeAt(i)^y.charCodeAt(i);
   return diff===0;
 }
-function gsPublicSession_(s){return {key:s.key,label:s.label,date:s.date,open:gsOpen_(s.key)&&gsDay_()===s.date};}
-function gsPublicStatus(){return {sessions:GS_CFG_.sessions.map(gsPublicSession_),today:gsDay_()};}
+function gsPublicSession_(s){return {key:s.key,label:s.label,date:s.date,open:gsOpen_(s.key)};}
+function gsPublicStatus(){return {sessions:GS_CFG_.sessions.map(gsPublicSession_),today:gsDay_(),manualControl:true};}
 function gsRequireEvent_(session){
   const s=gsSession_(session);
-  if(gsDay_()!==s.date || !gsOpen_(s.key)) throw new Error('Check-in untuk sesi ini belum dibuka atau sudah ditutup.');
+  if(!gsOpen_(s.key)) throw new Error('Check-in untuk sesi ini belum dibuka atau sudah ditutup.');
   return s;
 }
 function gsColumns_(head){
@@ -272,22 +275,27 @@ function gsStaffSnapshot(token,session,query){
   const tab=gsAttendance_(SpreadsheetApp.openById(GS_CFG_.spreadsheetId));
   const present=gsRecords_(tab,s.key);
   const matches=roster.filter(p=>(p.name+' '+p.receipt).toLowerCase().includes(q)).slice(0,GS_CFG_.maxSearchResults);
-  return {session:gsPublicSession_(s),total:roster.length,present:present.size,people:matches.map(p=>({name:p.name,receipt:p.receipt,present:present.has(p.receipt)})),venueCode:gsOpen_(s.key)&&gsDay_()===s.date?gsCode_(s.key):'',webAppUrl:ScriptApp.getService().getUrl()||''};
+  return {session:gsPublicSession_(s),total:roster.length,present:present.size,people:matches.map(p=>({name:p.name,receipt:p.receipt,present:present.has(p.receipt)})),venueCode:gsOpen_(s.key)?gsCode_(s.key):'',manualControl:true,webAppUrl:ScriptApp.getService().getUrl()||''};
 }
-function gsStaffSetOpen(token,session,open){
+function gsStaffSetOpen(token,session,open,ackOutsideDate){
   gsStaff_(token);
   const s=gsSession_(session);
-  if(gsDay_()!==s.date)throw new Error('Sesi hanya boleh dibuka pada tarikh program '+s.date+'.');
+  if(open!==true && open!==false)throw new Error('Status tidak sah.');
+  // Explicit staff confirmation is required to OPEN outside the programme date.
+  // Closing is always permitted; dates are checked in Malaysia time.
+  if(open===true && gsDay_()!==s.date && ackOutsideDate!==true)
+    throw new Error('Sahkan pembukaan di luar tarikh program terlebih dahulu.');
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(15000))throw new Error('Sistem sedang sibuk.');
   try{
     const props=gsProperties_();
     if(open===true){
-      // Rotate the code each time a session goes from closed to open.
-      if(!gsOpen_(s.key))props.setProperty('GS_CODE_'+s.key,Utilities.getUuid().replace(/-/g,'').slice(0,12).toUpperCase());
-      props.setProperty('GS_OPEN_'+s.key,'true');
-    }else if(open===false){props.setProperty('GS_OPEN_'+s.key,'false');props.deleteProperty('GS_CODE_'+s.key);}
-    else throw new Error('Status tidak sah.');
+      if(!gsOpen_(s.key))props.setProperty('GS_CODE_MANUAL_'+s.key,Utilities.getUuid().replace(/-/g,'').slice(0,12).toUpperCase());
+      props.setProperty('GS_OPEN_MANUAL_'+s.key,'true');
+    }else{
+      props.setProperty('GS_OPEN_MANUAL_'+s.key,'false');
+      props.deleteProperty('GS_CODE_MANUAL_'+s.key); // Old QR becomes invalid.
+    }
     return gsPublicSession_(s);
   }finally{lock.releaseLock();}
 }
