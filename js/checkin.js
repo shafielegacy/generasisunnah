@@ -68,6 +68,7 @@ function render(){
  "<label class='gs-field' for='gsSession'>Sesi program</label><select class='gs-input' id='gsSession'></select>"+
  "<div class='gs-grid'><div class='gs-stat'><small>Berdaftar</small><strong id='gsTotal'>–</strong></div><div class='gs-stat'><small>Hadir</small><strong id='gsPresent'>–</strong></div><div class='gs-stat'><small>Belum hadir</small><strong id='gsAbsent'>–</strong></div></div>"+
  "<div class='gs-actions'><span id='gsStatus'>Ditutup</span><span><button id='gsToggle' class='gs-button' disabled>Buka check-in</button> <button id='gsRefresh' class='gs-button alt'>Refresh</button></span></div>"+
+ "<p id='gsOpenNotice' class='gs-help' aria-live='polite'></p>"+
  "<div id='gsQRBlock' class='gs-qr gs-hidden'><div id='gsQR'></div><div><p>QR lokasi — scan untuk check-in pada GitHub Pages.</p><a id='gsQRLink' href='#' target='_blank' rel='noopener'>Buka pautan QR</a><p><button id='gsPrint' class='gs-button alt'>Cetak QR</button></p></div></div>"+
  "<label class='gs-field' for='gsSearch'>Cari nama / nombor resit</label><input class='gs-input' id='gsSearch' type='search' autocomplete='off' placeholder='Taip nama peserta'>"+
  "<label class='gs-field' for='gsOperator'>Nama petugas</label><input class='gs-input' id='gsOperator' maxlength='60' placeholder='Urusetia Meja 1' autocomplete='off'><div id='gsPeople'></div></div><div id='gsStaffMessage' class='gs-msg'></div></section>";
@@ -123,6 +124,9 @@ async function refreshStaff(){
   $('gsTotal').textContent=d.total;$('gsPresent').textContent=d.present;$('gsAbsent').textContent=d.total-d.present;
   const isOpen=!!d.session.open;$('gsStatus').textContent=isOpen?'Check-in dibuka':'Check-in ditutup';
   $('gsToggle').textContent=isOpen?'Tutup check-in':'Buka check-in';$('gsToggle').disabled=d.session.date!==today;
+  const dateParts=String(d.session.date||'').split('-');
+  const dateLabel=dateParts.length===3?`${Number(dateParts[2])} ${['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'][Number(dateParts[1])-1]||''} ${dateParts[0]}`.trim():'';
+  $('gsOpenNotice').textContent=d.session.date!==today&&dateLabel?`Check-in hanya boleh dibuka pada ${dateLabel} oleh urusetia.`:'';
   const url='https://shafielegacy.github.io/generasisunnah/?mode=peserta&session='+encodeURIComponent(k)+'&code='+encodeURIComponent(d.venueCode||'')+'#gsNativeApp';
   $('gsQRBlock').classList.toggle('gs-hidden',!isOpen||!d.venueCode);
   if(isOpen&&d.venueCode){$('gsQRLink').href=url;const box=$('gsQR');box.replaceChildren();if(typeof QRCode==='function')new QRCode(box,{text:url,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});else box.textContent='QR library tak dapat dimuatkan';}
