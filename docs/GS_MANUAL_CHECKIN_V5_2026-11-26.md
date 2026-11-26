@@ -1,0 +1,110 @@
+# Generasi Sunnah 2026 — Manual Check-in Control V2
+
+**Release / checkpoint:** 26 November 2026
+**GAS LIVE:** Version 5, deployment successfully updated pada 26 November 2026, 15:49 (MYT) — disahkan melalui tangkap layar operator
+**GitHub Pages:** https://shafielegacy.github.io/generasisunnah/
+**Repository:** https://github.com/shafielegacy/generasisunnah
+**Status:** UI verification **PASS** (read-only); live write / full end-to-end **BELUM DIUJI**
+
+## 1. Objektif dan keputusan
+
+Urusetia boleh membuka dan menutup check-in untuk sesi yang dipilih **sebelum, semasa atau selepas tarikh program**. Tarikh sesi kekal sebagai metadata dan rujukan pengesahan, bukan sekatan mutlak.
+
+| Sesi | Tarikh program |
+| --- | --- |
+| Batch 1 · Hari 1 | 28 November 2026 |
+| Batch 1 · Hari 2 | 29 November 2026 |
+| Batch 2 · Hari 1 | 5 Disember 2026 |
+| Batch 2 · Hari 2 | 6 Disember 2026 |
+
+## 2. Cara fungsi bekerja
+
+1. Urusetia login menggunakan kunci yang dikonfigurasi pada backend dan pilih sesi program.
+2. Sesi dalam keadaan **DITUTUP** secara lalai. Hanya urusetia yang telah login boleh mengubah status.
+3. Butang **Buka check-in** boleh digunakan tanpa menunggu tarikh program apabila backend mengesahkan `manualControl: true`.
+4. Jika dibuka di luar tarikh sesi, UI memaparkan dialog pengesahan dan backend mewajibkan `ackOutsideDate === true`.
+5. Pembukaan sesi menjana kod QR lokasi bagi sesi tersebut. Peserta masih perlu mengimbas QR dan mengesahkan resit serta empat digit terakhir telefon penjaga.
+6. **Tutup check-in** memadam kod lokasi aktif; pautan QR lama tidak boleh digunakan untuk menulis kehadiran. Pembukaan seterusnya menjana kod baharu.
+7. Urusetia boleh menandakan peserta hadir secara manual hanya apabila sesi dibuka. Rekod disimpan mengikut sesi dan waktu sebenar.
+
+## 3. Perubahan kod
+
+| Fail | Perubahan |
+| --- | --- |
+| `gas/Code.gs` | Buang date-lock daripada semakan check-in, tambah pengesahan buka di luar tarikh, `manualControl` flag, dan namespace status/QR manual baharu |
+| `gas/Checkin.html` | Selaraskan butang dan dialog pengesahan untuk paparan GAS HTML |
+| `js/checkin.js` | Aktifkan butang mengikut capability backend, makluman urusetia, pengesahan di luar tarikh, serta fallback jika GAS masih versi lama |
+| `index.html` | Cache-bust versi JavaScript portal supaya kod UI terkini dimuatkan |
+
+### Status awal yang selamat
+
+- Status baharu menggunakan `GS_OPEN_MANUAL_<session>` dan kod `GS_CODE_MANUAL_<session>` dalam Script Properties.
+- Flag lama `GS_OPEN_<session>` tidak lagi mengaktifkan sesi dalam kod baharu. Ini memastikan migrasi bermula **DITUTUP** walaupun ada status lama.
+- **Jangan** isi, paparkan atau commit nilai `GS_STAFF_KEY`, token sesi atau kod QR aktif ke repository.
+
+### Kawalan backend yang dikekalkan
+
+- Pengesahan sesi urusetia dengan cache dan tempoh 30 minit (renew semasa aktiviti).
+- Rate limit percubaan login dan self check-in.
+- `LockService` semasa tukar status serta semasa menulis rekod kehadiran.
+- Semakan peserta, batch, nombor resit, empat digit terakhir telefon penjaga dan kod lokasi untuk self check-in.
+- Deduplikasi per **sesi + nombor resit** sebelum append.
+- Waktu sebenar menggunakan `new Date()` dalam kolum `Waktu_Checkin`.
+- Data sumber pendaftaran dibaca sahaja; penulisan kehadiran terhad kepada tab `KEHADIRAN_GS`.
+
+## 4. Bukti pengesahan 26 November 2026
+
+Operator mengesahkan **GAS deployment V5 berjaya** dan berkongsi screenshot dashboard Urusetia selepas refresh/login.
+
+| Semakan | Bukti yang kelihatan | Status |
+| --- | --- | --- |
+| GAS deployment | “Deployment successfully updated”, Version 5, 26 Nov 2026 15:49 | **PASS** (operator screenshot) |
+| Dashboard Urusetia | Sesi Batch 1 · Hari 1 · 28 Nov | **PASS** |
+| Bilangan peserta | 62 berdaftar, 0 hadir, 62 belum hadir | **Dipaparkan** (snapshot pada masa semakan) |
+| Status sesi | “Check-in ditutup” | **PASS** |
+| Butang buka sebelum tarikh | **Buka check-in** aktif pada 26 Nov, walaupun sesi bertarikh 28 Nov | **PASS** |
+| Makluman kawalan manual | “Urusetia boleh buka atau tutup check-in pada bila-bila masa...” | **PASS** |
+| Klik buka/tutup LIVE | Tidak dilakukan | **PENDING** |
+| QR sebenar / rekod kehadiran LIVE | Tidak diuji | **PENDING** |
+
+**Interpretasi:** Bukti ini menyokong pengaktifan UI dan pembacaan capability manual daripada backend. Ia **bukan** bukti bahawa proses tulis kehadiran LIVE sudah lulus.
+
+## 5. QA sebelum program — urutan selamat
+
+### Read-only (telah dilakukan)
+
+- [x] Semak deployment GAS V5 berjaya.
+- [x] Login Urusetia dan pilih Batch 1 Hari 1.
+- [x] Pastikan status sesi **DITUTUP**.
+- [x] Pastikan butang **Buka check-in** tidak lagi disabled sebelum tarikh program.
+- [x] Semak makluman manual control dan statistik peserta.
+
+### Perlu pengesahan operasi (belum dilakukan)
+
+- [ ] Dengan kelulusan urusetia, pilih masa ujian terkawal dan pastikan tiada peserta sedang menggunakan QR.
+- [ ] Buka sesi di luar tarikh; sahkan dialog pengesahan muncul dan status berubah kepada **DIBUKA**.
+- [ ] Semak QR baharu dijana, tanpa mendedahkan kod QR secara awam semasa ujian.
+- [ ] Tutup sesi; pastikan status **DITUTUP** dan QR lama tidak diterima.
+- [ ] Uji buka semula dan pastikan QR berbeza daripada sebelumnya.
+- [ ] Jika perlu menguji penulisan, gunakan **peserta ujian yang diluluskan** dan rancangan pembersihan data; jangan cipta kehadiran palsu pada rekod rasmi.
+- [ ] Sahkan tiada pendua bagi peserta+sesi yang sama dan masa rekod adalah masa sebenar.
+- [ ] Akhiri ujian dengan **semua sesi DITUTUP** dan semak kiraan kehadiran rasmi.
+
+**Penting:** Jangan menguji butang **Buka** secara spontan pada sistem produksi kerana sesi yang dibuka boleh menerima check-in peserta sebenar.
+
+## 6. Deploy dan rollback
+
+**Deployment source:** `gas/Code.gs` dan `gas/Checkin.html` dalam projek Apps Script GenerasiSunnah. Kemaskini melalui **Deploy → Manage deployments → Edit → New version → Deploy** supaya deployment ID/URL sedia ada kekal. Jangan jalankan setup semula hanya untuk perubahan ini.
+
+**Jika perlu rollback:** pastikan sesi ditutup dahulu, kemudian pilih versi GAS terdahulu dalam Manage deployments. Pulihkan juga versi UI GitHub Pages yang sepadan jika perlu. Ambil perhatian: versi lama mempunyai date-lock dan membaca namespace status lama, jadi **semak status sesi dengan teliti** selepas rollback sebelum membenarkan akses peserta. Jangan padam rekod kehadiran atau Script Properties tanpa audit.
+
+## 7. Scope dan baki kerja
+
+- Tidak mengubah borang pendaftaran, data pendaftaran, pembayaran atau AutoCrat.
+- Tiada bukti data breach atau masalah LIVE daripada checkpoint ini.
+- **Release coding selesai; UI verification PASS; UAT check-in LIVE masih PENDING.**
+- Selepas program, semak kehadiran per sesi, ketepatan masa dan sebarang percubaan QR tidak sah sebelum final sign-off.
+
+---
+
+**Checkpoint:** 2026-11-26 · Manual Check-in Control V2 · GAS V5 · UI PASS / LIVE UAT PENDING
