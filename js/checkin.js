@@ -59,7 +59,7 @@ function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',
 function render(){
  root.innerHTML="<div class='gs-header'><h2>Mini Check-in</h2><span class='gs-head-note' id='gsState'>Check-in ditutup</span></div>"+
  "<div class='gs-tabs'><button data-tab='peserta' class='active'>◈ Peserta</button><button data-tab='urusetia'>▤ Urusetia</button></div>"+
- "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Check-in hanya dibuka pada hari program selepas urusetia membuka sesi.</div><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
+ "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia terlebih dahulu.</div><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
  "<form id='gsPublicForm' autocomplete='off'><label class='gs-field' for='gsReceipt'>5 aksara terakhir nombor resit</label><input class='gs-input' required id='gsReceipt' maxlength='5' minlength='5' pattern='[Rr][0-9]{4}' autocapitalize='characters' autocomplete='off' placeholder='Contoh: R0049'><p class='gs-help'>Taip R0049 sahaja, tak perlu GS26_.</p>"+
  "<label class='gs-field' for='gsPhone'>4 digit terakhir telefon penjaga</label><input class='gs-input' required id='gsPhone' maxlength='4' pattern='[0-9]{4}' inputmode='numeric' autocomplete='off' placeholder='••••'>"+
  "<button class='gs-button wide' id='gsSubmit' disabled>Sahkan kehadiran</button></form><div id='gsPublicMessage' class='gs-msg'></div><p class='gs-help'>Kalau tiada resit, minta urusetia bantu check-in.</p></section>"+
@@ -90,7 +90,7 @@ function updatePublic(){
  $('gsInstruction').textContent=hasQR?'QR: '+(sessions.find(x=>x[0]===current)?.[1]||'Sesi'):'Imbas QR rasmi di lokasi program supaya sesi dipilih automatik.';
  const notice=$('gsNotice');
  notice.textContent=!anyOpen
-  ?'Kehadiran belum boleh disahkan. Check-in hanya dibuka pada 28–29 November atau 5–6 Disember 2026 selepas urusetia mengaktifkan sesi. Status DIBUKA di atas merujuk pendaftaran.'
+  ?'Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia. Status DIBUKA di atas merujuk pendaftaran, bukan kehadiran.'
   : !hasQR?'Sesi check-in tersedia. Sila imbas QR rasmi di lokasi program untuk mengesahkan kehadiran.'
   : !open?'QR ini tidak aktif atau sesi sudah ditutup. Minta QR terkini daripada urusetia.'
   :'Sesi check-in dibuka. Masukkan kod resit pendek dan 4 digit telefon penjaga.';
@@ -123,10 +123,16 @@ async function refreshStaff(){
   if(k!==$('gsSession').value)return;snapshot=d;
   $('gsTotal').textContent=d.total;$('gsPresent').textContent=d.present;$('gsAbsent').textContent=d.total-d.present;
   const isOpen=!!d.session.open;$('gsStatus').textContent=isOpen?'Check-in dibuka':'Check-in ditutup';
-  $('gsToggle').textContent=isOpen?'Tutup check-in':'Buka check-in';$('gsToggle').disabled=d.session.date!==today;
+  const manualReady=d.manualControl===true;
+  $('gsToggle').textContent=isOpen?'Tutup check-in':'Buka check-in';
+  $('gsToggle').disabled=!manualReady&&d.session.date!==today;
   const dateParts=String(d.session.date||'').split('-');
   const dateLabel=dateParts.length===3?`${Number(dateParts[2])} ${['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'][Number(dateParts[1])-1]||''} ${dateParts[0]}`.trim():'';
-  $('gsOpenNotice').textContent=d.session.date!==today&&dateLabel?`Check-in hanya boleh dibuka pada ${dateLabel} oleh urusetia.`:'';
+  $('gsOpenNotice').textContent=manualReady
+   ?'Urusetia boleh buka atau tutup check-in pada bila-bila masa. Pembukaan di luar tarikh program memerlukan pengesahan.'
+   :d.session.date!==today&&dateLabel
+     ?`Kawalan tarikh lama masih aktif. Check-in hanya boleh dibuka pada ${dateLabel} sehingga GAS dikemas kini.`
+     :'Kawalan tarikh lama masih aktif. Kemas kini GAS untuk kawalan manual sepenuhnya.';
   const url='https://shafielegacy.github.io/generasisunnah/?mode=peserta&session='+encodeURIComponent(k)+'&code='+encodeURIComponent(d.venueCode||'')+'#gsNativeApp';
   $('gsQRBlock').classList.toggle('gs-hidden',!isOpen||!d.venueCode);
   if(isOpen&&d.venueCode){$('gsQRLink').href=url;const box=$('gsQR');box.replaceChildren();if(typeof QRCode==='function')new QRCode(box,{text:url,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});else box.textContent='QR library tak dapat dimuatkan';}
@@ -137,11 +143,22 @@ async function refreshStaff(){
  }catch(err){message('gsStaffMessage',err.message,true);if(/Sesi tamat|Sila login/.test(err.message)){token='';$('gsLogin').classList.remove('gs-hidden');$('gsDashboard').classList.add('gs-hidden');}}
 }
 async function toggle(){
- if(!token||!snapshot)return;const next=!snapshot.session.open;
- if(!confirm(next?'Buka check-in sesi ini?':'Tutup check-in dan batalkan QR semasa?'))return;
+ if(!token||!snapshot)return;
+ const s=snapshot.session,sessionKey=$('gsSession').value;
+ if(sessionKey!==s.key)return;
+ const next=!s.open,outsideDate=s.date!==today,manualReady=snapshot.manualControl===true;
+ if(next&&outsideDate&&!manualReady)return;
+ const question=next
+  ?outsideDate?`Tarikh program: ${s.label}. Anda pasti mahu BUKA check-in sekarang, di luar tarikh program?`:`Buka check-in untuk ${s.label}?`
+  :`Tutup check-in untuk ${s.label}? QR semasa akan dibatalkan.`;
+ if(!confirm(question))return;
  $('gsToggle').disabled=true;
- try{await api('gsStaffSetOpen',token,$('gsSession').value,next);await refreshStaff();await refreshPublic();}
- catch(err){message('gsStaffMessage',err.message,true);}
+ try{
+  if(next&&outsideDate)await api('gsStaffSetOpen',token,sessionKey,true,true);
+  else await api('gsStaffSetOpen',token,sessionKey,next);
+  await refreshStaff();await refreshPublic();
+ }catch(err){message('gsStaffMessage',err.message,true);}
+ finally{if(token&&$('gsSession').value===sessionKey)$('gsToggle').disabled=!manualReady&&outsideDate;}
 }
 async function logout(){const t=token;token='';snapshot=null;$('gsDashboard').classList.add('gs-hidden');$('gsLogin').classList.remove('gs-hidden');try{await api('gsStaffLogout',t);}catch(_){}}
 function printQR(){const e=$('gsQR').querySelector('canvas,img');if(!e)return;const url=e.tagName==='CANVAS'?e.toDataURL('image/png'):e.src;const w=window.open('','_blank');if(!w)return;const h=w.document.createElement('h1');h.textContent='Generasi Sunnah 2026';const image=w.document.createElement('img');image.src=url;image.style.width='360px';w.document.body.append(h,image);image.onload=()=>w.print();}
