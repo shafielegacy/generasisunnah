@@ -55,10 +55,16 @@ async function api(action,...args){
 }
 function message(id,text,isError=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);}
 function make(tag,value,cssClass){const e=document.createElement(tag);e.textContent=value||'';if(cssClass)e.className=cssClass;return e;}
-function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',v!=='peserta');$('gsStaff').classList.toggle('gs-hidden',v!=='urusetia');root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===v));if(v==='urusetia'&&token)refreshStaff();}
+function nativeUrl(mode){
+ let url=BASE+'?mode='+encodeURIComponent(mode);
+ if(mode==='peserta'&&hasQR)url+='&session='+encodeURIComponent(qrSession)+'&code='+encodeURIComponent(qrCode);
+ return url;
+}
+function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',v!=='peserta');$('gsStaff').classList.toggle('gs-hidden',v!=='urusetia');root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===v));$('gsNativeAlt').href=nativeUrl(v);if(v==='urusetia'&&token)refreshStaff();}
 function render(){
  root.innerHTML="<div class='gs-header'><h2>Mini Check-in</h2><span class='gs-head-note' id='gsState'>Check-in ditutup</span></div>"+
  "<div class='gs-tabs'><button data-tab='peserta' class='active'>◈ Peserta</button><button data-tab='urusetia'>▤ Urusetia</button></div>"+
+ "<p class='gs-help'>Jika sambungan check-in bermasalah pada telefon, <a id='gsNativeAlt' target='_blank' rel='noopener noreferrer'>buka versi alternatif Google Apps Script</a>.</p>"+
  "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia terlebih dahulu.</div><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
  "<form id='gsPublicForm' autocomplete='off'><label class='gs-field' for='gsReceipt'>5 aksara terakhir nombor resit</label><input class='gs-input' required id='gsReceipt' maxlength='5' minlength='5' pattern='[Rr][0-9]{4}' autocapitalize='characters' autocomplete='off' placeholder='Contoh: R0049'><p class='gs-help'>Taip R0049 sahaja, tak perlu GS26_.</p>"+
  "<label class='gs-field' for='gsPhone'>4 digit terakhir telefon penjaga</label><input class='gs-input' required id='gsPhone' maxlength='4' pattern='[0-9]{4}' inputmode='numeric' autocomplete='off' placeholder='••••'>"+
@@ -80,6 +86,7 @@ function render(){
  $('gsRefresh').addEventListener('click',refreshStaff);$('gsToggle').addEventListener('click',toggle);
  let debounce; $('gsSearch').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(refreshStaff,300);});
  $('gsPrint').addEventListener('click',printQR);
+ $('gsNativeAlt').href=nativeUrl('peserta');
  if(qs.get('mode')==='urusetia')setTab('urusetia');
  updatePublic();
 }
