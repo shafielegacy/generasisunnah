@@ -68,6 +68,7 @@
         </div>
       </div>
     </section>
+    <p id="quotaHelp" class="quota-updated" hidden>Data kuota tidak dapat disemak pada telefon ini. Untuk urusan kehadiran, <a id="gsNativeBackup" target="_blank" rel="noopener noreferrer">buka Check-in alternatif (Google Apps Script)</a>.</p>
     <div id="gsNativeApp"><p class="gs-help">Memuatkan Mini Check-in…</p></div>
   </main>
   <footer class="foot"><span>© Generasi Sunnah 2026</span></footer>
@@ -78,6 +79,8 @@
   // If a mobile browser cannot load the GAS script, show unavailable, not stale counts.
   let gsQuotaResponses=0,gsQuotaLoaded=false,gsQuotaRequest=null,gsQuotaTimer=null;
   let gsQuotaRetryTimer=null,gsQuotaRetryCount=0,gsQuotaLastAttempt=0;
+  let gsQuotaFallbackFrame=null,gsQuotaFallbackTimer=null,gsQuotaFallbackNonce='';
+  const gsQuotaHelp=document.getElementById('quotaHelp');
   const gsQuotaUpdated=document.getElementById('quotaUpdated');
   const gsQuotaValid=x=>Number.isInteger(x)&&x>=0&&x<=100000;
   window.GSQuotaReceive=function(data){
@@ -98,10 +101,45 @@
     gsQuotaResponses++;
     gsQuotaLoaded=true;
     gsQuotaRetryCount=0;
+    gsQuotaHelp.hidden=true;
+    if(gsQuotaFallbackTimer){clearTimeout(gsQuotaFallbackTimer);gsQuotaFallbackTimer=null;}
+    if(gsQuotaFallbackFrame){gsQuotaFallbackFrame.remove();gsQuotaFallbackFrame=null;}
     if(gsQuotaRetryTimer){clearTimeout(gsQuotaRetryTimer);gsQuotaRetryTimer=null;}
     const t=String(data.updatedAt||'');
     gsQuotaUpdated.textContent=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(t)?'Dikemas kini: '+t+' (MYT)':'Dikemas kini daripada spreadsheet';
   };
+  // Independent fallback: GAS renders public counts as HTML and posts a nonce-bound
+  // message from its sandboxed iframe. V5 deployments silently fail this fallback.
+  function gsQuotaStartFallback(){
+    if(gsQuotaLoaded||gsQuotaFallbackFrame)return;
+    try{
+      const bytes=crypto.getRandomValues(new Uint8Array(16));
+      gsQuotaFallbackNonce=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+      const frame=document.createElement('iframe');
+      frame.title='Semakan status kuota alternatif';
+      frame.setAttribute('aria-hidden','true');
+      frame.style.display='none';
+      frame.src=GS_WEBAPP_URL+'?view=quota-page&nonce='+gsQuotaFallbackNonce+'&_='+Date.now();
+      gsQuotaFallbackFrame=frame;
+      document.body.appendChild(frame);
+      gsQuotaFallbackTimer=setTimeout(()=>{
+        if(gsQuotaFallbackFrame){gsQuotaFallbackFrame.remove();gsQuotaFallbackFrame=null;}
+        gsQuotaFallbackTimer=null;
+        if(!gsQuotaLoaded){
+          gsQuotaUpdated.textContent='Data semasa tidak dapat dimuat pada telefon ini.';
+          gsQuotaHelp.hidden=false;
+        }
+      },14000);
+    }catch(_){gsQuotaHelp.hidden=false;}
+  }
+  window.addEventListener('message',e=>{
+    const allowed=e.origin==='null'||e.origin==='https://script.google.com'
+      ||/^https:\/\/[a-z0-9.-]+\.googleusercontent\.com$/i.test(e.origin);
+    if(!allowed||!gsQuotaFallbackNonce)return;
+    const msg=e.data;
+    if(!msg||msg.kind!=='GS_QUOTA_PAGE_V1'||msg.nonce!==gsQuotaFallbackNonce)return;
+    window.GSQuotaReceive(msg.data);
+  });
   function gsQuotaFailure(){
     if(!gsQuotaLoaded){
       for(const n of [1,2]){
@@ -112,7 +150,8 @@
     }
     gsQuotaUpdated.textContent=gsQuotaLoaded
       ?'Sambungan terganggu. Data terakhir mungkin tidak terkini — tekan Muat semula.'
-      :'Sambungan ke data pendaftaran gagal. Tekan Muat semula untuk cuba lagi.';
+      :'Sambungan terus gagal. Mencuba saluran data alternatif…';
+    if(!gsQuotaLoaded)gsQuotaStartFallback();
     if(gsQuotaRetryCount<1&&!gsQuotaRetryTimer){
       gsQuotaRetryCount++;
       gsQuotaRetryTimer=setTimeout(()=>{gsQuotaRetryTimer=null;gsRefreshQuota();},3000);
@@ -153,6 +192,13 @@
   // Public Apps Script URL only. Passwords and personal data are never stored here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
   window.GS_WEBAPP_URL = GS_WEBAPP_URL;
+  const backupParams=new URLSearchParams(location.search);
+  const backupMode=backupParams.get('mode')==='urusetia'?'urusetia':'peserta';
+  const backupSession=backupParams.get('session')||'',backupCode=backupParams.get('code')||'';
+  let backupUrl=GS_WEBAPP_URL+'?mode='+backupMode;
+  if(/^b[12]d[12]$/.test(backupSession)&&/^[a-f0-9]{12}$/i.test(backupCode))
+    backupUrl+='&session='+encodeURIComponent(backupSession)+'&code='+encodeURIComponent(backupCode);
+  document.getElementById('gsNativeBackup').href=backupUrl;
   // Run immediately after the HTML is parsed, without waiting for large images/CDN scripts.
   gsRefreshQuota();
   setInterval(gsRefreshQuota,120000);
