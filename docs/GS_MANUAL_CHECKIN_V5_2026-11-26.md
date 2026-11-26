@@ -127,3 +127,29 @@ Operator mengesahkan **GAS deployment V5 berjaya** dan berkongsi screenshot dash
 **QA:** Syntax JavaScript PASS; 9 ujian mock UI PASS (permintaan awal, callback data 64/71, status, timestamp, refresh, ralat). **Ujian pada Chrome telefon sebenar masih PENDING.** Jika sambungan GAS masih gagal, telefon kini sepatutnya memaparkan status tidak tersedia, bukannya angka 29/33 yang mengelirukan.
 
 **Langkah operator:** Selepas GitHub Pages publish, buka portal dengan query string baharu (contoh `?v=20261127`) pada Chrome telefon, tekan **Muat semula** jika perlu, dan semak timestamp. Jika masih gagal, semak sama ada URL GAS `?view=quota` boleh dicapai pada telefon serta ralat rangkaian/browser. Jangan ubah GAS LIVE tanpa diagnosis lanjut.
+
+
+## 9. 27 November 2026 — Mobile quota fallback sebelum acara
+
+**Isu masih terbuka:** Chrome telefon melaporkan status **MENUNGGU DATA** berpanjangan. Akses LIVE dari peranti telefon dan respons GAS tidak dapat diperiksa terus oleh pembangun; punca khusus sekatan cross-origin / rangkaian / deployment **belum dibuktikan**. Jangan menganggap masalah telah selesai hanya kerana mock test lulus.
+
+**Pembetulan source yang telah dipush ke GitHub `main`:**
+
+- `gas/Code.gs`: tambah laluan **READ-ONLY** `?view=quota-page`, memaparkan jumlah pendaftaran server-rendered daripada `gsPublicQuota_()` dan menghantar `postMessage` dengan nonce yang disahkan. Tiada akses kepada senarai peserta, kunci urusetia, resit atau operasi tulis. Laluan lama `?view=quota` dikekalkan.
+- `index.html`: jika JSONP gagal, cuba iframe tersembunyi ke `?view=quota-page` dan terima mesej hanya daripada origin Google yang dibenarkan dengan nonce sepadan. Jika kedua-dua saluran gagal, paparkan mesej jelas serta pautan check-in alternatif. Nilai lama 29/33 tidak dipaparkan.
+- `js/checkin.js`: pautan **versi alternatif Google Apps Script** untuk Peserta dan Urusetia, menggunakan deployment GAS sedia ada. Untuk imbasan QR, parameter sesi/kod yang sah dibawa bersama ke paparan alternatif.
+- `index.html`: naikkan versi cache JavaScript check-in kepada `20261127-mobile-fallback`.
+
+**QA source/mock:** Syntax JavaScript PASS; mock GAS HTML aggregate 64/71, mesej nonce, HTML escaping dan mod iframe PASS; mock frontend callback fallback, origin palsu ditolak, pemulihan data serta pautan QR PASS. **Ujian peranti sebenar PENDING.**
+
+**Deployment yang masih aktif:** GAS **V5** menurut pengesahan operator terdahulu. Source `gas/Code.gs` baharu **BELUM** dideploy LIVE. Tanpa deployment baharu, iframe fallback tidak akan berfungsi kerana laluan `quota-page` belum tersedia pada V5. GitHub Pages boleh menampilkan pautan check-in alternatif terus kerana GAS V5 sudah mempunyai paparan `Checkin` melalui `google.script.run`.
+
+### Langkah selepas operator kembali
+
+1. Buka projek Apps Script GenerasiSunnah, gantikan **hanya** kandungan `Code.gs` dengan versi terkini di GitHub. Fail `Checkin.html` tidak perlu diubah untuk patch ini.
+2. **Deploy → Manage deployments → Edit → New version → Deploy**, kekalkan deployment ID/URL `/exec` yang sama. Catat nombor versi baharu.
+3. Buka `/exec?view=quota-page` pada Chrome telefon: semak halaman HTML menunjukkan Batch 1/2 dan timestamp, bukan kod JavaScript mentah.
+4. Buka portal GitHub Pages pada telefon dengan query cache-busting baharu; tunggu 15–30 saat, semak angka dan timestamp. Jangan percaya angka tanpa timestamp.
+5. Jika data masih gagal, guna **pautan Check-in alternatif** untuk ujian operasi (tanpa menulis rekod rasmi sehingga diberi kelulusan). Semak `gsPublicStatus` / login urusetia / QR sebenar secara terkawal sebelum acara.
+
+**Jangan:** Ubah rekod pendaftaran/kehadiran, jalankan setup semula, atau buka sesi check-in LIVE hanya untuk ujian. Jika backend V6 belum dideploy, jangan tandakan mobile quota sebagai PASS.
