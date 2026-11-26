@@ -108,3 +108,22 @@ Operator mengesahkan **GAS deployment V5 berjaya** dan berkongsi screenshot dash
 ---
 
 **Checkpoint:** 2026-11-26 · Manual Check-in Control V2 · GAS V5 · UI PASS / LIVE UAT PENDING
+
+
+## 8. 27 November 2026 — Kuota mudah alih memaparkan angka lama
+
+**Aduan operator:** Desktop memaparkan Batch 1 = 64/70 (baki 6), Batch 2 = 71/70 (baki 0), manakala Chrome telefon masih memaparkan 29 dan 33 walaupun browsing data telah dibersihkan.
+
+**Penemuan source:** `index.html` masih mengandungi nilai statik fallback lama (29/50 dan 33/50). Angka baharu hanya muncul apabila callback `GSQuotaReceive` daripada GAS berjaya. Maka apabila panggilan GAS tidak selesai pada telefon, HTML memaparkan angka lama seolah-olah terkini. **Punca sebenar kegagalan panggilan pada Chrome telefon belum disahkan.**
+
+**Patch GitHub Pages** (`index.html`, commit `ce5ac4d`):
+- Gantikan angka dan status fallback lama dengan `—` / **MENUNGGU DATA**.
+- Mulakan request kuota sejurus HTML siap diparse, tanpa menunggu event `window.load` (imej/CDN).
+- Kekalkan cache-busting pada URL GET kuota.
+- Tambah retry automatik terhad, timeout 12 saat, butang **Muat semula**, dan mesej sambungan gagal.
+- Refresh semula apabila tab telefon kembali aktif (dengan had sela masa).
+- **Tiada perubahan GAS, spreadsheet, pendaftaran, AutoCrat atau check-in.**
+
+**QA:** Syntax JavaScript PASS; 9 ujian mock UI PASS (permintaan awal, callback data 64/71, status, timestamp, refresh, ralat). **Ujian pada Chrome telefon sebenar masih PENDING.** Jika sambungan GAS masih gagal, telefon kini sepatutnya memaparkan status tidak tersedia, bukannya angka 29/33 yang mengelirukan.
+
+**Langkah operator:** Selepas GitHub Pages publish, buka portal dengan query string baharu (contoh `?v=20261127`) pada Chrome telefon, tekan **Muat semula** jika perlu, dan semak timestamp. Jika masih gagal, semak sama ada URL GAS `?view=quota` boleh dicapai pada telefon serta ralat rangkaian/browser. Jangan ubah GAS LIVE tanpa diagnosis lanjut.
