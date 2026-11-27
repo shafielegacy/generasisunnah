@@ -219,9 +219,20 @@ function gsTodaySession_(){
   if(!s)throw new Error('Check-in belum bermula atau tarikh program sudah tamat. Sila hadir pada tarikh batch yang ditetapkan.');
   return s;
 }
-function gsRequireEvent_(session){
+/*
+ * TEMPORARY QA EXCEPTION (OWNER GO 27 Nov 2026) — version A only. Redeploy V7 (version B) right after UAT.
+ * Exempts ONLY the date-equality check, ONLY for the self check-in of dummy GS26_R0146 / last4 6789
+ * into session b1d1, and ONLY while Malaysia's date is 2026-11-27 (self-expires at 00:00 MYT 28 Nov).
+ * Open flag, roster/batch/phone match, LockService, dedupe and rate limit are unchanged.
+ */
+const GS_QA_ONE_DUMMY_=Object.freeze({receipt:'GS26_R0146',last4:'6789',session:'b1d1',day:'2026-11-27'});
+function gsQaDummy_(session,receipt,last4){
+  const q=GS_QA_ONE_DUMMY_;
+  return gsDay_()===q.day && session===q.session && receipt===q.receipt && last4===q.last4;
+}
+function gsRequireEvent_(session,qaReceipt,qaLast4){
   const s=gsSession_(session);
-  if(gsDay_()!==s.date)throw new Error('Check-in tidak dibenarkan di luar tarikh program: '+s.date+'.');
+  if(gsDay_()!==s.date && !gsQaDummy_(s.key,qaReceipt,qaLast4))throw new Error('Check-in tidak dibenarkan di luar tarikh program: '+s.date+'.');
   if(!gsOpen_(s.key))throw new Error('Check-in belum dibuka oleh urusetia.');
   return s;
 }
@@ -261,11 +272,11 @@ function gsRecords_(tab,session){
   const values=tab.getRange(2,1,tab.getLastRow()-1,3).getDisplayValues();
   return new Set(values.filter(r=>r[1]===session).map(r=>String(r[2]||'').trim().toUpperCase()));
 }
-function gsWriteCheckin_(session,receipt,method,actor){
+function gsWriteCheckin_(session,receipt,method,actor,qaLast4){
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(15000)) throw new Error('Sistem sedang sibuk. Cuba lagi sebentar.');
   try{
-    gsRequireEvent_(session);
+    gsRequireEvent_(session,method==='QR PESERTA'?receipt:undefined,method==='QR PESERTA'?qaLast4:undefined);
     const ss=SpreadsheetApp.openById(GS_CFG_.spreadsheetId);
     const tab=gsAttendance_(ss);
     const people=gsRoster_();
@@ -296,15 +307,15 @@ function gsSelfCheckin(data){
   if(!data || typeof data!=='object') throw new Error('Maklumat tidak lengkap.');
   // Session is determined by Malaysia's date, NEVER by a browser query parameter.
   // The printed QR Monkey poster points to the GitHub homepage only.
-  const s=gsTodaySession_();
-  gsRequireEvent_(s.key);
   const receipt=String(data.receipt||'').trim().toUpperCase();
   const last4=String(data.last4||'').trim();
+  const s=gsQaDummy_(GS_QA_ONE_DUMMY_.session,receipt,last4)?gsSession_(GS_QA_ONE_DUMMY_.session):gsTodaySession_();
+  gsRequireEvent_(s.key,receipt,last4);
   if(!/^GS26_R\d{4,}$/.test(receipt)||!/^\d{4}$/.test(last4))throw new Error('Nombor resit atau telefon tidak sah.');
   gsRateLimit_(receipt);
   const person=gsRoster_().find(x=>x.receipt===receipt&&x.batch===s.batch);
   if(!person || !person.phoneDigits.endsWith(last4))throw new Error('Maklumat tidak dapat disahkan. Semak nombor resit dan 4 digit terakhir telefon penjaga.');
-  return gsWriteCheckin_(s.key,receipt,'QR PESERTA','PESERTA');
+  return gsWriteCheckin_(s.key,receipt,'QR PESERTA','PESERTA',last4);
 }
 /**
  * READ-ONLY: has this receipt already been recorded for TODAY's session?
@@ -313,9 +324,9 @@ function gsSelfCheckin(data){
  */
 function gsSelfCheckinStatus(data){
   if(!data || typeof data!=='object') throw new Error('Maklumat tidak lengkap.');
-  const s=gsTodaySession_();
   const receipt=String(data.receipt||'').trim().toUpperCase();
   const last4=String(data.last4||'').trim();
+  const s=gsQaDummy_(GS_QA_ONE_DUMMY_.session,receipt,last4)?gsSession_(GS_QA_ONE_DUMMY_.session):gsTodaySession_();
   if(!/^GS26_R\d{4,}$/.test(receipt)||!/^\d{4}$/.test(last4))throw new Error('Nombor resit atau telefon tidak sah.');
   gsRateLimit_('STATUS:'+receipt);
   const person=gsRoster_().find(x=>x.receipt===receipt&&x.batch===s.batch);
