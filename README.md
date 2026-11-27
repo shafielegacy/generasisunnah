@@ -4,11 +4,31 @@
 
 🌐 **[Portal rasmi](https://shafielegacy.github.io/generasisunnah/)**
 
-- **Peserta / penjaga:** imbas QR Monkey **tetap** pada poster, kekal di GitHub Pages, masukkan 5 aksara terakhir `No_Resit` (contoh `R0146`) dan 4 digit terakhir telefon penjaga, kemudian **Sahkan kehadiran**.
+- **Peserta / penjaga:** imbas QR Monkey **tetap** pada poster, kekal di GitHub Pages, masukkan 5 aksara terakhir `No_Resit` (contoh format `R0049`; semak nombor sebenar pada resit) dan 4 digit terakhir telefon penjaga, kemudian **Sahkan kehadiran**.
 - **Urusetia:** login melalui tab **Urusetia**, pilih sesi, semak peserta dan buka/tutup check-in pada **tarikh sesi yang tepat**.
 - **Sesi rasmi:** Batch 1 pada **28–29 November 2026**; Batch 2 pada **5–6 Disember 2026** (waktu `Asia/Kuala_Lumpur`).
 
-## Latest milestone — Premium UI V2 LIVE (27 November 2026, malam)
+## Latest verified milestone — UAT LIVE check-in PASS (28 November 2026, ~00:00–00:08 MYT)
+
+**OWNER mengesahkan UAT sebenar Batch 1 · Hari 1 (`b1d1`) lulus bagi aliran utama.** Ini bukti sistem production menggunakan **Premium UI V2 + GAS Version 7 + Google Sheets rasmi**, bukan mock/offline. Deployment ID, QR asal dan URL `/exec` kekal.
+
+| Ujian LIVE | Keputusan |
+| --- | --- |
+| Tarikh Malaysia 28 Nov dan status sesi `b1d1` dibuka | **PASS** — portal memaparkan check-in dibuka |
+| Self-check-in dummy `R0147` / telefon akhir `6789` | **PASS** — paparan `BERJAYA` |
+| Kehadiran QR → `KEHADIRAN_GS` | **PASS** — baris `GS26_R0147` / `b1d1` / `QR PESERTA` dilihat pada 00:00:50 |
+| Urusetia login, carian nama, modal pengesahan dan tanda hadir | **PASS** — rekod `URUS SETIA` berjaya ditulis setelah operator memadam baris dummy ujian terdahulu |
+| Dashboard selepas muat semula | **PASS** — paparan `68 berdaftar / 1 hadir / 67 belum hadir`, dummy `HADIR` (pengesahan owner) |
+| Cubaan kedua self-check-in resit yang telah direkod | **PASS** — memaparkan `SUDAH DIREKOD`; backend mempunyai dedup mengikut sesi+resit |
+| Resit salah `R0157` | **PASS** — ditolak sebagai maklumat tidak dapat disahkan (operator mengaku tersalah taip) |
+
+**Batas bukti:** dua kaedah penulisan diuji secara *berurutan* dengan peserta dummy yang sama; operator **memadam baris ujian pertama** sebelum ujian Urusetia. Jangan anggap kedua-dua kaedah menulis pada masa serentak. Skrin `SUDAH DIREKOD` disahkan; ujian concurrency/semua sesi dan audit duplicate merentas semua keadaan **bukan** sebahagian UAT ini. UAT sesi Batch 1 Hari 2 dan Batch 2 masih perlu dijalankan pada tarikh masing-masing.
+
+**UX improvement (HOLD):** selepas urusetia klik `Tanda hadir`, mesej berjaya memang muncul sebagai **toast di bahagian bawah skrin**, terlalu mudah terlepas pandang. Cadangan selepas program: **modal kejayaan berpusat** dengan nama, resit, sesi dan status `HADIR`; jika duplicate, `SUDAH DIREKOD`. Kekalkan respons backend sebagai sumber kebenaran. **Tiada hotfix/deploy untuk isu kosmetik semasa program**. Isu resit formula berubah dengan pendaftaran baharu kekal dalam backlog pasca-program.
+
+**Keputusan:** **UAT LIVE b1d1 = PASS WITH LIMITATIONS; PRODUCTION FREEZE** untuk GAS V7/Premium UI V2/Sheets; **eCERT production = HOLD**. Jangan padam mana-mana rekod kehadiran lagi. [Butiran bukti dan handover UAT](docs/GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md).
+
+## Historical milestone — Premium UI V2 LIVE (27 November 2026, malam)
 
 **OWNER design milestone LULUS dan OWNER GO frontend LIVE telah dilaksanakan.** [PR #7](https://github.com/shafielegacy/generasisunnah/pull/7) merged sebagai `2148443`, dan [PR #9](https://github.com/shafielegacy/generasisunnah/pull/9) merekod release. GitHub Pages dilaporkan berjaya terbit pada **20:31 MYT, 27 Nov**. Homepage/QR poster, GAS V7, Sheets dan AutoCrat tidak berubah.
 
@@ -78,6 +98,6 @@ Dokumen sejarah lama di bawah ialah snapshot waktu terdahulu; **jangan ikut cont
 - Pada **27 Nov 2026, 14:28 MYT**, satu **Native eCERT QA** berasaskan salinan Slides → PDF Drive → `MailApp.sendEmail` **berjaya**, dengan peserta rekaan `QA-GS26-001`, watermark `UJIAN SAHAJA — TIDAK SAH` dan pengesahan e-mel diterima oleh owner. AutoCrat tidak digunakan dalam ujian itu.
 - Branch `staging/ecert-gs26-review` menyimpan `staging/ecert/` dan `staging/native-ecert/`. **Bukan code eCERT production**; belum merge atau deploy ke GAS check-in V7.
 - **Production eCERT = HOLD.** Job AutoCrat `eCERT GS26` masih tidak mempunyai merge conditions; **jangan tekan Run** pada roster penuh, hidupkan trigger, hantar e-mel tambahan atau jana sijil rasmi sebelum kelayakan kehadiran dua hari, approval dan OWNER GO.
-- **Check-in E2E Sheets = PENDING** untuk 28 Nov; penolakan tarikh pada 27 Nov adalah PASS tetapi bukan bukti penulisan sah ke tab kehadiran.
+- **Kemas kini 28 Nov:** UAT LIVE `b1d1` telah **PASS WITH LIMITATIONS** untuk self-check-in, urusetia dan Sheets; kenyataan PENDING sebelum ini ialah status sejarah sebelum 00:00 MYT.
 
 Bagi kerja sambungan, bezakan **QA berasaskan Google yang telah dibuat satu kali** daripada **simulator offline** dan **integrasi modul eCERT yang belum diuji**. Semua perubahan production memerlukan kelulusan baharu.
