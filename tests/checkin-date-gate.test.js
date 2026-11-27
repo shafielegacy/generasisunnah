@@ -23,6 +23,8 @@ test('closed session FAIL',()=>{set('2026-11-28',false);assert.throws(()=>check(
 test('wrong phone FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_R0144','1111'),/tidak dapat disahkan/);});
 test('invalid receipt FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_X0144'),/tidak sah/);});
 test('staff write date guard',()=>{set('2026-11-27');assert.throws(()=>ctx.gsRequireEvent_('b1d1'),/luar tarikh/);});
+test('staff session dropdown always has a valid default outside event dates',()=>{assert(ui.includes('sel.value=current||sessions[0][0]'));assert(!ui.includes('sel.value=current;'));});
+test('successful staff snapshot clears stale session error',()=>{assert(ui.includes("if($('gsStaffMessage').classList.contains('error'))message('gsStaffMessage','');"));});
 test('frontend no QR code dependence',()=>{assert(!ui.includes('hasQR'));assert(!ui.includes('qrCode'));assert(ui.includes("api('gsSelfCheckin',{receipt,last4})"));});
 test('GitHub homepage retained',()=>{assert(!index.includes('location.replace(dest.href)'));assert(index.includes('id="gsNativeApp"'));});
 test('direct CORS transport: no no-cors, no JSONP polling, no cookies',()=>{assert(!ui.includes("no-cors"));assert(!ui.includes('view=rpc'));assert(!ui.includes("createElement('script')"));assert(ui.includes("mode:'cors'"));assert(ui.includes("credentials:'omit'"));});

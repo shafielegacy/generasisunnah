@@ -57,7 +57,7 @@ function render(){
  "<div id='gsQRBlock' class='gs-qr gs-hidden'><div id='gsQR'></div><div><p>QR poster QR Monkey digunakan untuk membuka portal GitHub.</p><a id='gsQRLink' href='#' target='_blank' rel='noopener'>Buka pautan QR</a><p><button id='gsPrint' class='gs-button alt'>Cetak QR</button></p></div></div>"+
  "<label class='gs-field' for='gsSearch'>Cari nama / nombor resit</label><input class='gs-input' id='gsSearch' type='search' autocomplete='off' placeholder='Taip nama peserta'>"+
  "<label class='gs-field' for='gsOperator'>Nama petugas</label><input class='gs-input' id='gsOperator' maxlength='60' placeholder='Urusetia Meja 1' autocomplete='off'><div id='gsPeople'></div></div><div id='gsStaffMessage' class='gs-msg'></div></section>";
- const sel=$('gsSession');for(const [k,v] of sessions){const o=make('option',v);o.value=k;sel.append(o);}sel.value=current;
+ const sel=$('gsSession');for(const [k,v] of sessions){const o=make('option',v);o.value=k;sel.append(o);}sel.value=current||sessions[0][0];
  root.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
  $('gsReceipt').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
  $('gsPublicForm').addEventListener('submit',selfCheckin);$('gsLoginForm').addEventListener('submit',login);
@@ -149,6 +149,8 @@ async function refreshStaff(){
  const k=$('gsSession').value;
  try{const d=await api('gsStaffSnapshot',token,k,$('gsSearch').value);
   if(k!==$('gsSession').value)return;snapshot=d;
+   // A successful snapshot clears a stale validation error from a previous empty session.
+   if($('gsStaffMessage').classList.contains('error'))message('gsStaffMessage','');
   $('gsTotal').textContent=d.total;$('gsPresent').textContent=d.present;$('gsAbsent').textContent=d.total-d.present;
   const isOpen=!!d.session.open;$('gsStatus').textContent=isOpen?'Check-in dibuka':'Check-in ditutup';
   const manualReady=d.manualControl===true;
