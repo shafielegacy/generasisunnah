@@ -10,47 +10,29 @@ const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 const sessions=[['b1d1','Batch 1 · Hari 1 · 28 Nov'],['b1d2','Batch 1 · Hari 2 · 29 Nov'],['b2d1','Batch 2 · Hari 1 · 5 Dis'],['b2d2','Batch 2 · Hari 2 · 6 Dis']];
 let token='',today='',current='',currentTab='peserta',pub=[],snapshot=null,submitting=false,publicStatusLoaded=false;
-// GAS does not expose CORS response headers. POST the private payload without
-// exposing a response, then read the short-lived result by an unguessable ID.
-const callbacks=new Map();
-window.GS_PORTAL_RPC_RESULT=function(id,result){
-  const done=callbacks.get(id);
-  if(done)done(result);
-};
-function pollOnce(id){
-  return new Promise(resolve=>{
-    let finished=false;
-    const el=document.createElement('script');
-    const timeout=setTimeout(()=>done({ready:false}),6500);
-    function done(value){
-      if(finished)return;
-      finished=true;clearTimeout(timeout);callbacks.delete(id);el.remove();resolve(value);
-    }
-    callbacks.set(id,done);
-    el.onerror=()=>done({ready:false});
-    el.onload=()=>setTimeout(()=>done({ready:false}),70);
-    el.referrerPolicy='no-referrer';
-    el.src=BASE+'?view=rpc&rid='+encodeURIComponent(id)+'&_='+Date.now();
-    document.head.appendChild(el);
-  });
-}
+// Reliable bridge: ONE browser request returns a readable JSON response.
+ // No browser JSONP polling, no credentials in URL, no automatic POST retries.
+const BRIDGE=String(window.GS_API_BRIDGE_URL||'');
 async function api(action,...args){
-  const bytes=crypto.getRandomValues(new Uint8Array(16));
-  const id=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
-  const body=JSON.stringify({rpcId:id,action,args});
-  if(body.length>4096)throw new Error('Permintaan terlalu panjang.');
-  await fetch(BASE,{method:'POST',mode:'no-cors',credentials:'omit',
-    headers:{'Content-Type':'text/plain;charset=UTF-8'},body,cache:'no-store'});
-  for(let n=0;n<16;n++){
-    const reply=await pollOnce(id);
-    if(reply&&reply.ready){
-      const result=reply.result;
-      if(!result||result.ok!==true)throw new Error(result?.error||'Permintaan gagal.');
-      return result.data;
-    }
-    await new Promise(resolve=>setTimeout(resolve,700));
-  }
-  throw new Error('Tiada jawapan daripada GAS. Semak sambungan, kemudian cuba lagi.');
+ if(!/^https:\/\/[a-z0-9.-]+\/api\/checkin$/i.test(BRIDGE))
+   throw new Error('Sambungan check-in belum dikonfigurasi. Sila maklumkan urusetia.');
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),25000);
+ try{
+  const response=await fetch(BRIDGE,{
+    method:'POST',mode:'cors',credentials:'omit',cache:'no-store',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,args}),signal:controller.signal
+  });
+  const payload=await response.json();
+  if(!response.ok)throw new Error(payload.error||'Sambungan tidak berjaya.');
+  if(!payload||payload.ok!==true)throw new Error(payload?.error||'Permintaan ditolak.');
+  return payload.data;
+ }catch(err){
+  if(err.name==='AbortError'||err instanceof TypeError)
+    throw new Error('Sambungan tidak pasti. Jangan hantar semula sebelum urusetia semak.');
+  throw err;
+ }finally{clearTimeout(timeout);}
 }
 function message(id,text,isError=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);}
 function make(tag,value,cssClass){const e=document.createElement(tag);e.textContent=value||'';if(cssClass)e.className=cssClass;return e;}
