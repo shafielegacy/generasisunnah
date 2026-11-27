@@ -153,3 +153,23 @@ Operator mengesahkan **GAS deployment V5 berjaya** dan berkongsi screenshot dash
 5. Jika data masih gagal, guna **pautan Check-in alternatif** untuk ujian operasi (tanpa menulis rekod rasmi sehingga diberi kelulusan). Semak `gsPublicStatus` / login urusetia / QR sebenar secara terkawal sebelum acara.
 
 **Jangan:** Ubah rekod pendaftaran/kehadiran, jalankan setup semula, atau buka sesi check-in LIVE hanya untuk ujian. Jika backend V6 belum dideploy, jangan tandakan mobile quota sebagai PASS.
+
+
+---
+
+## Addendum 27 November 2026 — DOKUMEN SEJARAH / SUPERSEDED
+
+**Dokumen V5 di atas adalah rekod sejarah 26 November, BUKAN arahan operasi LIVE terkini.** Polisi lama (“urusetia boleh buka sesi di luar tarikh”, QR lokasi yang dijana setiap kali buka, `ackOutsideDate`) **telah diganti** oleh GAS V7 + GitHub PR #3/#4 pada 27 November 2026.
+
+**Keadaan production kini:**
+
+- GAS **V7** pada deployment sedia ada, dikemas kini **27 Nov 2026, 17:07 MYT**; `gsPublicStatus` mengesahkan `simpleCheckin:true`.
+- QR **tetap QR Monkey** pada poster menuju terus ke `https://shafielegacy.github.io/generasisunnah/`; tiada QR dinamik atau pindah ke UI GAS.
+- Tarikh **28–29 Nov / 5–6 Dis** dikuatkuasakan oleh backend `Asia/Kuala_Lumpur`; urusetia **tidak boleh membuka atau menulis** di luar tarikh sesi.
+- Status kuota dan Mini Check-in telah dilihat pada Pixel 10/ROG; penolakan check-in pada 27 Nov adalah **PASS** (keselamatan), bukan kegagalan sambungan.
+- **Belum ada UAT tulis sebenar telefon → `KEHADIRAN_GS`** pada tarikh program. Ujian terkawal dan deduplikasi diperlukan pada 28 Nov.
+- Resit dummy terkini yang diperiksa: `GS26_R0146`, **bukan** `GS26_R0144` (yang kini peserta sebenar). Sentiasa semak formula/Sheet semasa sebelum menguji.
+
+**Rujukan semasa:** [README](../README.md) dan [Audit Check-in 27 Nov — Post-release checkpoint](AUDIT_CHECKIN_2026-11-27.md#27-november-2026--post-release-checkpoint-mengatasi-status-staging-di-bahagian-atas).
+
+Jangan ikut arahan seksyen V5 di atas untuk membuka check-in di luar tarikh, menjana QR baharu atau deploy V5 semula tanpa rancangan rollback rasmi.
