@@ -40,11 +40,11 @@
     .quota-digits small{font-size:10px;color:var(--muted)}
     .quota-meter{height:6px;background:#e3eae1;border-radius:99px;margin-top:13px;overflow:hidden}
     .quota-meter span{height:100%;display:block;background:linear-gradient(90deg,#118263,#d6ad55);border-radius:99px;transition:width .4s ease}
-    @media(max-width:720px){.quota-grid{grid-template-columns:1fr}.quota-panel{padding:20px 17px}.quota-top h2{font-size:21px}.quota-digits strong{font-size:22px}.quota-card{padding:14px}}
+    @media(max-width:720px){.quota-panel,#quotaHelp{display:none!important}.hero-inner{padding-bottom:52px}main{margin-top:-20px}.gs-container{scroll-margin-top:14px}}
   </style>
 <link rel="stylesheet" href="./js/checkin.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
-<script defer src="./js/checkin.js?v=20261127-mobile-fallback"></script>
+<script defer src="./js/checkin.js?v=20261127-date-gated-checkin"></script>
 </head>
 <body>
   <nav class="nav" aria-label="Navigasi utama"><div class="nav-inner"><a class="brand" href="#utama" aria-label="Generasi Sunnah 2026"><span class="mark" aria-hidden="true"><img src="./sl-logo.png" alt=""></span><span><strong>GENERASI SUNNAH</strong><small>PROGRAM 2026</small></span></a><span class="tag">MINI CHECK-IN</span></div></nav>
@@ -68,7 +68,7 @@
         </div>
       </div>
     </section>
-    <p id="quotaHelp" class="quota-updated" hidden>Data kuota tidak dapat dipaparkan dalam portal ini. Untuk urusan kehadiran, <a id="gsNativeBackup" target="_blank" rel="noopener noreferrer">buka Check-in alternatif (Google Apps Script)</a>.</p>
+    <p id="quotaHelp" class="quota-updated" hidden>Data kuota tidak dapat dipaparkan pada masa ini. Maklumat kehadiran tetap disemak oleh sistem.</p>
     <div id="gsNativeApp"><p class="gs-help">Memuatkan Mini Check-in…</p></div>
   </main>
   <footer class="foot"><span>© Generasi Sunnah 2026</span></footer>
@@ -192,13 +192,6 @@
   // Public Apps Script URL only. Passwords and personal data are never stored here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
   window.GS_WEBAPP_URL = GS_WEBAPP_URL;
-  const backupParams=new URLSearchParams(location.search);
-  const backupMode=backupParams.get('mode')==='urusetia'?'urusetia':'peserta';
-  const backupSession=backupParams.get('session')||'',backupCode=backupParams.get('code')||'';
-  let backupUrl=GS_WEBAPP_URL+'?mode='+backupMode;
-  if(/^b[12]d[12]$/.test(backupSession)&&/^[a-f0-9]{12}$/i.test(backupCode))
-    backupUrl+='&session='+encodeURIComponent(backupSession)+'&code='+encodeURIComponent(backupCode);
-  document.getElementById('gsNativeBackup').href=backupUrl;
   // Run immediately after the HTML is parsed, without waiting for large images/CDN scripts.
   gsRefreshQuota();
   setInterval(gsRefreshQuota,120000);
