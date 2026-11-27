@@ -112,10 +112,14 @@ function gsPublicQuotaPage_(requestNonce){
  * Only the listed existing functions may be called.
  */
 function gsRpcStore_(id,data){
+  // Legacy JSONP polling support (old cached frontends only). Best effort:
+  // a CacheService failure must NEVER turn a completed write into {ok:false}.
   if(!id)return;
-  const json=JSON.stringify(data);
-  const safe=json.length<=90000?json:JSON.stringify({ok:false,error:'Jawapan terlalu besar.'});
-  CacheService.getScriptCache().put('GS_RPC_'+id,safe,90);
+  try{
+    const json=JSON.stringify(data);
+    const safe=json.length<=90000?json:JSON.stringify({ok:false,error:'Jawapan terlalu besar.'});
+    CacheService.getScriptCache().put('GS_RPC_'+id,safe,90);
+  }catch(_){}
 }
 function doPost(e) {
   const output = obj => ContentService.createTextOutput(JSON.stringify(obj))
@@ -137,6 +141,9 @@ function doPost(e) {
       case 'gsSelfCheckin':
         if (input.args.length!==1) throw new Error('Parameter tidak sah.');
         result=gsSelfCheckin(input.args[0]); break;
+      case 'gsSelfCheckinStatus':
+        if (input.args.length!==1) throw new Error('Parameter tidak sah.');
+        result=gsSelfCheckinStatus(input.args[0]); break;
       case 'gsStaffLogin':
         if (input.args.length!==1) throw new Error('Parameter tidak sah.');
         result=gsStaffLogin(input.args[0]); break;
@@ -160,6 +167,7 @@ function doPost(e) {
   } catch (err) {
     const message=err && err.message ? String(err.message).slice(0,160) : 'Ralat sistem.';
     const reply={ok:false,error:message};
+    if(err && err.gsUncertain===true) reply.uncertain=true; // write MAY have happened
     gsRpcStore_(rpcId,reply);
     return output(reply);
   }
@@ -265,8 +273,14 @@ function gsWriteCheckin_(session,receipt,method,actor){
     if(!p || p.batch!==gsSession_(session).batch) throw new Error('Rekod peserta tidak sepadan dengan batch.');
     const existing=gsRecords_(tab,session);
     if(existing.has(receipt)) return {ok:true,already:true,message:'Kehadiran peserta sudah direkod untuk sesi ini.'};
-    tab.appendRow([Utilities.getUuid(),session,receipt,new Date(),method,actor,'']);
-    SpreadsheetApp.flush();
+    try{
+      tab.appendRow([Utilities.getUuid(),session,receipt,new Date(),method,actor,'']);
+      SpreadsheetApp.flush();
+    }catch(_){
+      // The row may or may not be stored. Never report this as a clean failure.
+      const e=new Error('Status penulisan tidak pasti. Sila semak semula sebelum menghantar lagi.');
+      e.gsUncertain=true; throw e;
+    }
     return {ok:true,already:false,message:'Kehadiran berjaya direkod.'};
   }finally{lock.releaseLock();}
 }
@@ -291,6 +305,23 @@ function gsSelfCheckin(data){
   const person=gsRoster_().find(x=>x.receipt===receipt&&x.batch===s.batch);
   if(!person || !person.phoneDigits.endsWith(last4))throw new Error('Maklumat tidak dapat disahkan. Semak nombor resit dan 4 digit terakhir telefon penjaga.');
   return gsWriteCheckin_(s.key,receipt,'QR PESERTA','PESERTA');
+}
+/**
+ * READ-ONLY: has this receipt already been recorded for TODAY's session?
+ * Used by the frontend ONLY after an UNKNOWN outcome. Never writes attendance.
+ * Requires the same receipt + last-4 match as check-in, so it leaks nothing extra.
+ */
+function gsSelfCheckinStatus(data){
+  if(!data || typeof data!=='object') throw new Error('Maklumat tidak lengkap.');
+  const s=gsTodaySession_();
+  const receipt=String(data.receipt||'').trim().toUpperCase();
+  const last4=String(data.last4||'').trim();
+  if(!/^GS26_R\d{4,}$/.test(receipt)||!/^\d{4}$/.test(last4))throw new Error('Nombor resit atau telefon tidak sah.');
+  gsRateLimit_('STATUS:'+receipt);
+  const person=gsRoster_().find(x=>x.receipt===receipt&&x.batch===s.batch);
+  if(!person || !person.phoneDigits.endsWith(last4))throw new Error('Maklumat tidak dapat disahkan. Semak nombor resit dan 4 digit terakhir telefon penjaga.');
+  const tab=gsAttendance_(SpreadsheetApp.openById(GS_CFG_.spreadsheetId));
+  return {recorded:gsRecords_(tab,s.key).has(receipt),session:s.key};
 }
 function gsCheckKey_(key){
   const saved=String(gsProperties_().getProperty('GS_STAFF_KEY')||'');

@@ -9,7 +9,7 @@ if(!root)return;
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 const sessions=[['b1d1','Batch 1 · Hari 1 · 28 Nov'],['b1d2','Batch 1 · Hari 2 · 29 Nov'],['b2d1','Batch 2 · Hari 1 · 5 Dis'],['b2d2','Batch 2 · Hari 2 · 6 Dis']];
-let token='',today='',current='',currentTab='peserta',pub=[],snapshot=null,submitting=false,publicStatusLoaded=false;
+let token='',today='',current='',currentTab='peserta',pub=[],snapshot=null,submitting=false,publicStatusLoaded=false,cooldownUntil=0;
 // ONE standard CORS request per action. Apps Script ContentService answers
 // via script.googleusercontent.com with Access-Control-Allow-Origin:*, so the
 // browser can read the JSON directly. text/plain keeps it a "simple" request
@@ -31,7 +31,11 @@ async function api(action,...args){
     throw new GsUncertain('Sambungan terputus sebelum pengesahan diterima.');
   }finally{clearTimeout(timer);}
   if(!response.ok||!result||typeof result.ok!=='boolean')throw new GsUncertain('Jawapan pelayan tidak sah.');
-  if(result.ok!==true)throw new Error(String(result.error||'Permintaan ditolak.'));
+  if(result.ok!==true){
+    // Server says the write MAY have happened (failure after appendRow) -> UNKNOWN, not FAILED.
+    if(result.uncertain===true)throw new GsUncertain(String(result.error||'Status penulisan tidak pasti.'));
+    throw new Error(String(result.error||'Permintaan ditolak.'));
+  }
   return result.data;
 }
 function message(id,text,isError=false,isOk=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);e.classList.toggle('ok',isOk);}
@@ -76,7 +80,7 @@ function updatePublic(){
   :'Sesi check-in dibuka. Masukkan resit dan 4 digit telefon penjaga.';
  $('gsInstruction').textContent=eventToday&&s?'Sesi hari ini: '+s.label:'Sesi akan dipilih secara automatik pada hari program.';
  notice.classList.toggle('gs-notice-open',publicStatusLoaded&&eventToday&&open);
- $('gsSubmit').disabled=submitting||(publicStatusLoaded&&(!eventToday||!open));
+ $('gsSubmit').disabled=submitting||Date.now()<cooldownUntil||(publicStatusLoaded&&(!eventToday||!open));
 }
 async function refreshPublic(){
  try{
@@ -84,29 +88,55 @@ async function refreshPublic(){
   if(!d||!Array.isArray(d.sessions)||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d.today||''))throw new Error('Status sesi tidak sah.');
   pub=d.sessions;today=d.today;const active=pub.find(s=>s.date===today);
   current=active?active.key:'';publicStatusLoaded=true;
-  message('gsPublicMessage','');updatePublic();
+  if(!$('gsPublicMessage').dataset.outcome)message('gsPublicMessage','');updatePublic();
  }catch(err){
   publicStatusLoaded=false;current='';pub=[];
-  message('gsPublicMessage','Sambungan gagal: '+err.message,true);updatePublic();
+  if(!$('gsPublicMessage').dataset.outcome)message('gsPublicMessage','Status sesi belum dapat disemak. Anda masih boleh tekan Sahkan Kehadiran.',true);updatePublic();
  }
 }
+// Three outcomes only. SUCCESS needs backend ok:true (write or already-recorded).
+// FAILED = backend answered ok:false: nothing was written. UNKNOWN = no trustworthy answer.
+function showOutcome(kind,text){
+ const e=$('gsPublicMessage');
+ e.textContent=(kind==='SUCCESS'?'\u2713 BERJAYA \u2014 ':kind==='FAILED'?'\u2717 GAGAL \u2014 ':kind==='UNKNOWN'?'? STATUS TIDAK DIKETAHUI \u2014 ':'')+text;
+ e.dataset.outcome=kind||'PENDING'; // refreshPublic() must not overwrite this
+ e.classList.toggle('ok',kind==='SUCCESS');
+ e.classList.toggle('error',kind==='FAILED'||kind==='UNKNOWN');
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// READ-ONLY confirmation after an UNKNOWN outcome. Safe to repeat: it never writes.
+async function verifyRecorded(receipt,last4){
+ for(let i=0;i<2;i++){
+  await sleep(i?5000:6000); // let an in-flight write finish first
+  try{const r=await api('gsSelfCheckinStatus',{receipt,last4});if(r&&typeof r.recorded==='boolean')return r.recorded;}
+  catch(err){if(!(err instanceof GsUncertain))return null;}
+ }
+ return null;
+}
 async function selfCheckin(e){
- e.preventDefault();if(submitting)return;
+ e.preventDefault();if(submitting||Date.now()<cooldownUntil)return;
  const shortReceipt=$('gsReceipt').value.trim().toUpperCase(),last4=$('gsPhone').value.trim();
- if(!/^R\d{4}$/.test(shortReceipt)){message('gsPublicMessage','Masukkan kod resit seperti R0049.',true);return;}
- if(!/^\d{4}$/.test(last4)){message('gsPublicMessage','Masukkan 4 digit terakhir telefon penjaga.',true);return;}
- submitting=true;updatePublic();
- message('gsPublicMessage','Menyemak dan menyimpan kehadiran… jangan tutup halaman ini.');
+ if(!/^R\d{4}$/.test(shortReceipt)){showOutcome('FAILED','Masukkan kod resit seperti R0049.');return;}
+ if(!/^\d{4}$/.test(last4)){showOutcome('FAILED','Masukkan 4 digit terakhir telefon penjaga.');return;}
+ const receipt='GS26_'+shortReceipt;
+ submitting=true;updatePublic(); // button disabled for the whole request + verification
+ showOutcome('','Menyemak dan menyimpan kehadiran\u2026 jangan tutup atau tekan semula.');
  try{
-  // All official 2026 receipts are GS26_R####. Session is chosen by the SERVER from Malaysia's date.
-  const d=await api('gsSelfCheckin',{receipt:'GS26_'+shortReceipt,last4});
+  // Session is chosen by the SERVER from Malaysia's date. ONE mutating request, never auto-retried.
+  const d=await api('gsSelfCheckin',{receipt,last4});
   if(!d||d.ok!==true)throw new GsUncertain('Jawapan pelayan tidak lengkap.');
-  message('gsPublicMessage',d.already?'✓ Kehadiran anda SUDAH direkod untuk sesi hari ini. Tiada tindakan lanjut diperlukan.':'✓ BERJAYA. Kehadiran direkod untuk sesi hari ini. Tunjukkan skrin ini kepada urusetia jika diminta.',false,true);
+  showOutcome('SUCCESS',d.already?'Kehadiran anda SUDAH direkod untuk sesi hari ini. Tiada tindakan lanjut diperlukan.':'Kehadiran direkod untuk sesi hari ini. Tunjukkan skrin ini kepada urusetia jika diminta.');
   $('gsReceipt').value='';$('gsPhone').value='';
  }catch(err){
-  if(err instanceof GsUncertain)
-   message('gsPublicMessage','Status belum pasti: '+err.message+' Kehadiran mungkin sudah direkod. Tekan Sahkan Kehadiran SEKALI lagi untuk menyemak (sistem tidak akan merekod dua kali), atau rujuk urusetia.',true);
-  else message('gsPublicMessage',err.message,true);
+  if(!(err instanceof GsUncertain)){showOutcome('FAILED',err.message+' Tiada rekod dibuat.');}
+  else{
+   showOutcome('','Sambungan terganggu. Menyemak sama ada kehadiran sudah tersimpan\u2026 jangan tekan semula.');
+   const recorded=await verifyRecorded(receipt,last4);
+   if(recorded===true){showOutcome('SUCCESS','Kehadiran disahkan tersimpan selepas semakan semula.');$('gsReceipt').value='';$('gsPhone').value='';}
+   else if(recorded===false){showOutcome('FAILED','Kehadiran BELUM direkod (disahkan oleh pelayan). Anda boleh tekan Sahkan Kehadiran sekali lagi.');}
+   else{cooldownUntil=Date.now()+30000;setTimeout(updatePublic,30500);
+    showOutcome('UNKNOWN','Kami tidak dapat mengesahkan sama ada kehadiran tersimpan. Jangan hantar berulang kali. Sila rujuk urusetia di meja pendaftaran.');}
+  }
  }finally{submitting=false;updatePublic();}
 }
 async function login(e){
