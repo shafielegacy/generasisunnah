@@ -73,4 +73,5 @@ test('gsSelfCheckinStatus is read-only and requires matching phone',()=>{
   assert.equal(vm.runInContext('rows.length',c),1);});
 test('gsSelfCheckinStatus rejects outside event dates',()=>{
   const c=freshGas(sheetMock+"gsDay_=()=>'2026-11-27';");assert.equal(post(c,'gsSelfCheckinStatus',[{receipt:'GS26_R0144',last4:'6789'}]).ok,false);});
+test('quota panel visible on mobile (not hidden by CSS)',()=>{assert(!/\.quota-panel[^{]*\{display:none/.test(index));});
 console.log(n+' offline QA tests passed; NO GOOGLE CALLS.');
