@@ -1,0 +1,33 @@
+name: GS26 Native eCERT QA (offline)
+
+on:
+  push:
+    branches:
+      - staging/ecert-gs26-review
+    paths:
+      - 'staging/native-ecert/**'
+      - '.github/workflows/ecert-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eligibility:
+    name: Offline eligibility and safety tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout staging source
+        uses: actions/checkout@v4
+      - name: Node runtime
+        run: node --version
+      - name: Syntax check
+        run: |
+          node --check staging/native-ecert/test-eligibility.js
+          cp staging/native-ecert/Eligibility.gs /tmp/gs26-eligibility.js
+          cp staging/native-ecert/Engine.gs /tmp/gs26-engine.js
+          node --check /tmp/gs26-eligibility.js
+          node --check /tmp/gs26-engine.js
+      - name: Run offline QA
+        run: node staging/native-ecert/test-eligibility.js
