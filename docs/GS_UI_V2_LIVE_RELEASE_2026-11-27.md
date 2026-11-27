@@ -63,3 +63,28 @@ Integrasi meliputi: format request, semua hasil (BERJAYA, SUDAH, GAGAL, TIDAK DI
 1. Cepat: `git revert -m 1 2148443` pada `main`, push → GitHub Pages kembali ke UI lama (`114eb7b`).
 2. Alternatif: set semula kandungan `index.html` daripada cawangan `rollback/pre-ui-v2-20261127`.
 3. GAS tidak perlu disentuh; endpoint dan kontrak tidak berubah.
+
+
+## Checkpoint OWNER — Milestone Premium UI V2 LIVE disahkan (27 Nov 2026)
+
+**Keputusan OWNER:** reka bentuk Premium UI V2 telah **LULUS MILESTONE**, kemudian OWNER secara berasingan meluluskan **integrasi dan penerbitan frontend LIVE**. Ini bukan kelulusan pengeluaran eCERT atau ubah suai GAS. Sumber milestone ialah hasil Claude Code dan verifikasi GitHub PR #7 / #9; keputusan ujian yang dilaporkan mesti dibezakan daripada UAT penulisan production.
+
+### Bukti release dan integriti skop
+- **PR #6** ialah prototaip berdata rekaan: kekal Draft, **jangan merge** ke production.
+- **PR #7** ([frontend LIVE](https://github.com/shafielegacy/generasisunnah/pull/7)): merged ke `main`, SHA `214844346f15a4e01876cc834ca55d73029655c9`.
+- **PR #9** ([dokumen release](https://github.com/shafielegacy/generasisunnah/pull/9)): merged ke `main`, SHA `e37d354cb695d4936234167f789a665956928f7a`.
+- GitHub Pages dilaporkan **SUCCESS 27 Nov, 20:31 MYT**; URL asal, QR poster dan GAS V7 `/exec` kekal.
+- Fail produksi UI baharu: `index.html`, `assets/gs-v2.js`, `assets/gs-v2.css`; skrip legacy `js/checkin.js` tidak dimuatkan oleh V2.
+- Rollback: `rollback/pre-ui-v2-20261127` pada `114eb7b`; gunakan revert merge `2148443` jika perlu. Pastikan prosedur diuji/diteliti oleh operator sebelum rollback.
+
+### Pintu penerimaan operasi 28 November (BELUM PASS pada checkpoint ini)
+1. Log masuk urusetia dan pilih **Batch 1 Hari 1 / `b1d1`** pada tarikh sebenar.
+2. Buka check-in oleh urusetia; jangan cuba melakukan penulisan luar tarikh program.
+3. Semak kembali identiti dummy di `Daftar GS` sebelum ujian (formula resit boleh berubah). Pada snapshot 27 Nov: `GS26_R0146`, 4 digit `6789`.
+4. Dari telefon: input `R0146` + `6789` → **BERJAYA**; semak `KEHADIRAN_GS` mempunyai **tepat satu** rekod `GS26_R0146` untuk `b1d1`.
+5. Uji sekali lagi dari telefon lain → **SUDAH DIREKOD**, masih satu rekod.
+6. Jika `TIDAK DIKETAHUI`, jangan berulang kali tekan; semak snapshot/status baca-sahaja dan catat kehadiran kertas jika perlu.
+
+**Had bukti:** 21/21 ujian Playwright menggunakan GAS dimock; 11/11 statik, 29/29 date guard, 9/9 regresi legacy ialah QA, **bukan** bukti penulisan sebenar. Login staf, buka/tutup sesi, check-in manual dan self check-in production masih **NOT VERIFIED** sehingga sesi 28 Nov. Tiada perubahan eCERT atau AutoCrat dibenarkan oleh milestone ini.
+
+**Release gate:** UI LIVE = **PASS**; operasi tulis check-in ke Sheets = **PENDING**; eCERT production = **HOLD**.
