@@ -103,7 +103,7 @@ function ecBatchHash_(snapshot,batch) {
     days:r.days, reasons:r.reasons, eligibility:r.eligibility
   })).sort((a,b) => a.receipt.localeCompare(b.receipt));
   const sessions = Object.keys(EC_SESSIONS_).filter(s => EC_SESSIONS_[s].batch === batch);
-  const orphans = snapshot.orphans.filter(o => sessions.includes(o.session))
+  const orphans = snapshot.orphans.filter(o => sessions.includes(o.session) || !EC_SESSIONS_[o.session])
     .sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
   return ecDigest_({relevant,orphans});
 }
@@ -196,10 +196,11 @@ function ecCloseBatchQa(batch) {
     if (ecMalaysiaDate_(ecNow_(cfg)) < lastDay) throw new Error('Hari kedua belum selesai.');
     const ledger=ecLedger_(cfg),snapshot=ecRead_(cfg,ledger);
     if (ecBatchRecord_(ledger.batch,batch)) throw new Error('Batch sudah ditutup.');
+    if (!snapshot.rows.some(r => r.batch===batch)) throw new Error('Tiada peserta dalam batch QA.');
     if (snapshot.rows.some(r => r.batch===batch && r.eligibility==='REVIEW'))
       throw new Error('Ada peserta memerlukan semakan.');
     const sessions=Object.keys(EC_SESSIONS_).filter(s=>EC_SESSIONS_[s].batch===batch);
-    if (snapshot.orphans.some(o => sessions.includes(o.session)))
+    if (snapshot.orphans.some(o => sessions.includes(o.session) || !EC_SESSIONS_[o.session]))
       throw new Error('Ada check-in tanpa padanan.');
     ledger.batch.appendRow([batch,'CLOSED',new Date(),actor,ecBatchHash_(snapshot,batch)]);
     ecLog_(ledger.audit,actor,'BATCH_CLOSED','',String(batch));
