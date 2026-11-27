@@ -68,7 +68,7 @@ function render(){
  "<div class='gs-grid'><div class='gs-stat'><small>Berdaftar</small><strong id='gsTotal'>–</strong></div><div class='gs-stat'><small>Hadir</small><strong id='gsPresent'>–</strong></div><div class='gs-stat'><small>Belum hadir</small><strong id='gsAbsent'>–</strong></div></div>"+
  "<div class='gs-actions'><span id='gsStatus'>Ditutup</span><span><button id='gsToggle' class='gs-button' disabled>Buka check-in</button> <button id='gsRefresh' class='gs-button alt'>Refresh</button></span></div>"+
  "<p id='gsOpenNotice' class='gs-help' aria-live='polite'></p>"+
- "<div id='gsQRBlock' class='gs-qr gs-hidden'><div id='gsQR'></div><div><p>QR lokasi — scan untuk check-in pada GitHub Pages.</p><a id='gsQRLink' href='#' target='_blank' rel='noopener'>Buka pautan QR</a><p><button id='gsPrint' class='gs-button alt'>Cetak QR</button></p></div></div>"+
+ "<div id='gsQRBlock' class='gs-qr gs-hidden'><div id='gsQR'></div><div><p>QR poster QR Monkey digunakan untuk membuka portal GitHub.</p><a id='gsQRLink' href='#' target='_blank' rel='noopener'>Buka pautan QR</a><p><button id='gsPrint' class='gs-button alt'>Cetak QR</button></p></div></div>"+
  "<label class='gs-field' for='gsSearch'>Cari nama / nombor resit</label><input class='gs-input' id='gsSearch' type='search' autocomplete='off' placeholder='Taip nama peserta'>"+
  "<label class='gs-field' for='gsOperator'>Nama petugas</label><input class='gs-input' id='gsOperator' maxlength='60' placeholder='Urusetia Meja 1' autocomplete='off'><div id='gsPeople'></div></div><div id='gsStaffMessage' class='gs-msg'></div></section>";
  const sel=$('gsSession');for(const [k,v] of sessions){const o=make('option',v);o.value=k;sel.append(o);}sel.value=current;
@@ -135,7 +135,7 @@ async function refreshStaff(){
   const isOpen=!!d.session.open;$('gsStatus').textContent=isOpen?'Check-in dibuka':'Check-in ditutup';
   const manualReady=d.manualControl===true;
   $('gsToggle').textContent=isOpen?'Tutup check-in':'Buka check-in';
-  $('gsToggle').disabled=!manualReady&&d.session.date!==today;
+  $('gsToggle').disabled=!manualReady||(!isOpen&&d.session.date!==today);
   const dateParts=String(d.session.date||'').split('-');
   const dateLabel=dateParts.length===3?`${Number(dateParts[2])} ${['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'][Number(dateParts[1])-1]||''} ${dateParts[0]}`.trim():'';
   $('gsOpenNotice').textContent=manualReady
@@ -143,7 +143,6 @@ async function refreshStaff(){
    :d.session.date!==today&&dateLabel
      ?`Kawalan tarikh lama masih aktif. Check-in hanya boleh dibuka pada ${dateLabel} sehingga GAS dikemas kini.`
      :'Kawalan tarikh lama masih aktif. Kemas kini GAS untuk kawalan manual sepenuhnya.';
-  const url='https://shafielegacy.github.io/generasisunnah/?mode=peserta&session='+encodeURIComponent(k)+'&code='+encodeURIComponent(d.venueCode||'')+'#gsNativeApp';
   $('gsQRBlock').classList.add('gs-hidden');
 
   $('gsPeople').replaceChildren();
@@ -160,7 +159,7 @@ async function toggle(){
  if(next&&outsideDate)return;
  const question=next
   ?`Buka check-in untuk ${s.label}?`
-  :`Tutup check-in untuk ${s.label}? QR semasa akan dibatalkan.`;
+  :`Tutup check-in untuk ${s.label}?`;
  if(!confirm(question))return;
  $('gsToggle').disabled=true;
  try{
