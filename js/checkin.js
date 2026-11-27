@@ -149,6 +149,8 @@ async function refreshStaff(){
  const k=$('gsSession').value;
  try{const d=await api('gsStaffSnapshot',token,k,$('gsSearch').value);
   if(k!==$('gsSession').value)return;snapshot=d;
+   // A successful snapshot clears a stale validation error from a previous empty session.
+   if($('gsStaffMessage').classList.contains('error'))message('gsStaffMessage','');
   $('gsTotal').textContent=d.total;$('gsPresent').textContent=d.present;$('gsAbsent').textContent=d.total-d.present;
   const isOpen=!!d.session.open;$('gsStatus').textContent=isOpen?'Check-in dibuka':'Check-in ditutup';
   const manualReady=d.manualControl===true;
