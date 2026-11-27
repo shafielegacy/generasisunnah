@@ -97,7 +97,7 @@ function ecRead_(cfg, ledger) {
   const snapshot = ecEvaluate_(people,checkins,corrections);
   if (snapshot.rows.some(row => !/^QA-[A-Z0-9_-]+$/.test(row.receipt) ||
       !/^QA-[A-Z0-9_-]+$/.test(row.certificate) ||
-      !/^[^\\s,;@<>]+@[^\\s,;@<>]+\\.invalid$/i.test(row.email)))
+      !/^[^\s,;@<>]+@[^\s,;@<>]+\.invalid$/i.test(row.email)))
     throw new Error('Phase 2 memerlukan resit/sijil QA dan e-mel domain .invalid.');
   return snapshot;
 }
@@ -259,6 +259,9 @@ function ecGenerateQa(receipt) {
       const folder=DriveApp.getFolderById(cfg.folderId);
       const slideFile=DriveApp.getFileById(cfg.templateId)
         .makeCopy('QA-SLIDES-'+p.certificate,folder);
+      ecLog_(ledger.audit,actor,'SLIDES_CREATED',key,slideFile.getId());
+      if (PropertiesService.getScriptProperties().getProperty('EC_PHASE2_FAIL_AFTER_COPY') === 'true')
+        throw new Error('QA injected failure after Slides copy, before PDF.');
       const presentation=SlidesApp.openById(slideFile.getId());
       const tags=[
         ['<<Nama_Peserta>>',p.name],
@@ -271,7 +274,13 @@ function ecGenerateQa(receipt) {
       });
       const first=presentation.getSlides()[0];
       if (!first) throw new Error('Template tiada slide.');
-      const mark=first.insertTextBox('UJIAN SAHAJA — TIDAK SAH',25,10,650,35);
+      if (presentation.getSlides().length !== 1) throw new Error('QA expects one certificate page.');
+      const content = presentation.getSlides().map(slide => slide.getShapes()
+        .map(shape => shape.getText().asString()).join('\n')).join('\n');
+      if (/<<[^>]+>>/.test(content) || tags.some(pair => !content.includes(pair[1])))
+        throw new Error('Placeholder verification failed.');
+      const mark=first.insertTextBox('UJIAN SAHAJA — TIDAK SAH',25,10,presentation.getPageWidth()-50,35);
+      mark.getFill().setSolidFill('#FFFFFF');
       mark.getText().getTextStyle().setForegroundColor('#B00020')
         .setFontSize(18).setBold(true);
       presentation.saveAndClose();
