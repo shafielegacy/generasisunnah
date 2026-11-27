@@ -8,7 +8,18 @@
 - **Urusetia:** login melalui tab **Urusetia**, pilih sesi, semak peserta dan buka/tutup check-in pada **tarikh sesi yang tepat**.
 - **Sesi rasmi:** Batch 1 pada **28–29 November 2026**; Batch 2 pada **5–6 Disember 2026** (waktu `Asia/Kuala_Lumpur`).
 
-## Status production — checkpoint 27 November 2026 (petang)
+## Latest milestone — Premium UI V2 LIVE (27 November 2026, malam)
+
+**OWNER design milestone LULUS dan OWNER GO frontend LIVE telah dilaksanakan.** [PR #7](https://github.com/shafielegacy/generasisunnah/pull/7) merged sebagai `2148443`, dan [PR #9](https://github.com/shafielegacy/generasisunnah/pull/9) merekod release. GitHub Pages dilaporkan berjaya terbit pada **20:31 MYT, 27 Nov**. Homepage/QR poster, GAS V7, Sheets dan AutoCrat tidak berubah.
+
+**Ujian sebelum release:** 21/21 browser GAS-mock, 11/11 statik, 29/29 kawalan tarikh, 9/9 regresi legacy PASS. Semakan LIVE baca-sahaja UI, status awam, kuota, respons di luar tarikh, mobile dan mod gelap PASS; **penulisan check-in sebenar ke `KEHADIRAN_GS` masih PENDING ujian 28 Nov**. Login urusetia, buka/tutup sesi, tanda hadir manual dan self-check-in sebenar belum disahkan end-to-end pada UI V2.
+
+- [Laporan release, rollback dan milestone OWNER](docs/GS_UI_V2_LIVE_RELEASE_2026-11-27.md)
+- [Sejarah projek dengan checkpoint malam 27 Nov](docs/GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md)
+- **Rollback:** `rollback/pre-ui-v2-20261127` (`114eb7b`) atau revert merge `2148443` selepas semakan operator. PR #6 (demo) kekal Draft dan bukan production.
+- **eCERT:** Phase 2 Google QA 32 assertion PASS, staging Draft PR #5; Phase 3 sedang diteruskan secara terasing. Pengeluaran eCERT peserta sebenar tetap **HOLD**.
+
+## Status production — checkpoint 27 November 2026 (petang; rujukan sejarah)
 
 | Komponen | Status / bukti |
 | --- | --- |
