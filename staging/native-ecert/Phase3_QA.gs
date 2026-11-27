@@ -149,3 +149,45 @@ function phase3ConflictEvidence() {
   }
   console.log(JSON.stringify(ecReconcileQa(attempt.receipt)));
 }
+
+/** Separate execution; review data must be entered explicitly in Script Properties. */
+function phase3RecoverReviewedCrash() {
+  const cfg=ecReliableConfig_();
+  const review=JSON.parse(PropertiesService.getScriptProperties().getProperty('EC3_RECOVERY_REVIEW') || '{}');
+  const before=ecReconcileQa('QA-P3-CRASH');
+  const result=ecRecoverExistingPdfQa('QA-P3-CRASH',review.attemptId,review.evidenceHash,
+    review.reason,review.confirmation);
+  const after=ecReconcileQa('QA-P3-CRASH');
+  const pdfsBefore=before.output.filter(file => file.mime===MimeType.PDF);
+  const pdfsAfter=after.output.filter(file => file.mime===MimeType.PDF);
+  if (pdfsBefore.length!==1 || pdfsAfter.length!==1 || pdfsBefore[0].id!==pdfsAfter[0].id ||
+      pdfsBefore[0].hash!==pdfsAfter[0].hash || after.ledgerStatus!=='GENERATED')
+    throw new Error('Recovery evidence mismatch.');
+  phase3Reject_(() => ecGenerateQa('QA-P3-CRASH'),/already reserved/,'RECOVERED_PDF_CANNOT_REGENERATE');
+  console.log(JSON.stringify({event:'RECOVERY_VERIFIED',result,pdfHash:pdfsAfter[0].hash,
+    pdfCount:pdfsAfter.length,ledgerStatus:after.ledgerStatus}));
+}
+
+/** Final read-only assertions. No generation, recovery or state repair. */
+function phase3FinalVerification() {
+  const cfg=ecReliableConfig_(), ledger=ecLedger_(cfg), props=PropertiesService.getScriptProperties();
+  function snapshot() {
+    const files=[], iterator=DriveApp.getFolderById(cfg.folderId).getFiles();
+    while(iterator.hasNext()) {const f=iterator.next();files.push([f.getId(),f.getName(),f.getMimeType()]);}
+    files.sort((a,b)=>a[0].localeCompare(b[0]));
+    return {issues:ecRows_(ledger.issue),audit:ecRows_(ledger.audit),properties:Object.entries(props.getProperties()).sort((a,b)=>a[0].localeCompare(b[0])),files};
+  }
+  const before=snapshot(), reports=['QA-P3-CONCURRENT','QA-P3-CRASH','QA-P3-B2','QA-P3-INTERRUPT'].map(ecReconcileQa);
+  const after=snapshot();
+  if (ecDigest_(before)!==ecDigest_(after)) throw new Error('Reconciliation changed state.');
+  if (reports.slice(0,3).some(r=>r.reconciliationStatus!=='COMPLETE' || r.output.filter(f=>f.mime===MimeType.PDF).length!==1))
+    throw new Error('Completed issuance inconsistency.');
+  if (reports[3].reconciliationStatus!=='REVIEW_REQUIRED' || reports[3].output.length!==0) throw new Error('Abandoned attempt guard.');
+  if (before.files.filter(f=>f[2]===MimeType.PDF).length!==3 || before.files.filter(f=>f[2]===MimeType.GOOGLE_SLIDES).length!==3)
+    throw new Error('Unexpected output count.');
+  if (new Set(before.issues.map(r=>r[10])).size!==4) throw new Error('Attempt identities not unique.');
+  console.log(JSON.stringify({event:'FINAL_READ_ONLY_VERIFIED',pdfCount:3,slidesCount:3,attemptCount:4,
+    reconciliationUnchanged:true,emailEnabled:false,reports:reports.map(r=>({receipt:r.receipt,
+    attemptId:r.attempt.id,status:r.reconciliationStatus,pdfId:r.ledgerPdfId}))}));
+  phase3Inspect();
+}

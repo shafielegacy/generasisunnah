@@ -175,4 +175,13 @@ test('conflicting ledger PDF identity holds review',()=>{
 test('recovery requires an explicit operation confirmation',()=>{
   const f=fixture();assert.throws(()=>f.c.ecRecoverExistingPdfQa('QA-P3-X','id','hash','Reviewed evidence, QA only',''),/confirmation/);
 });
+test('completed issuance reconciles without requesting recovery',()=>{
+  const f=fixture();f.c.ecGenerateQa('QA-P3-X');
+  const r=f.c.ecReconcileQa('QA-P3-X');assert.equal(r.reconciliationStatus,'COMPLETE');
+  assert.equal(r.action,'NO_ACTION');assert.equal(r.recoverable,false);
+});
+test('completed issuance with conflicting hash requires review',()=>{
+  const f=fixture();f.c.ecGenerateQa('QA-P3-X');f.ledger.issue.rows[0][12]='conflict';
+  assert.equal(f.c.ecReconcileQa('QA-P3-X').reconciliationStatus,'REVIEW_REQUIRED');
+});
 console.log(passed+' Phase 3 offline tests passed. Concurrency here is mocked.');

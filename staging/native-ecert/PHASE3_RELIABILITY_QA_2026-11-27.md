@@ -1,6 +1,6 @@
 # Native eCERT Phase 3 · Reliability and crash recovery QA
 
-**27 November 2026 · development checkpoint · Google execution pending authorisation · production HOLD**
+**27 November 2026 · Google integration checkpoint · production HOLD**
 
 ## Baseline
 
@@ -25,16 +25,16 @@ Phase 2 GitHub Actions run [45992859807](https://github.com/shafielegacy/generas
 | --- | --- |
 | Existing eligibility Node tests | 25 PASS |
 | Phase 2 regression Node tests | 10 PASS |
-| Phase 3 reliability Node tests | 20 PASS, Google services mocked |
+| Phase 3 reliability Node tests | 22 PASS, Google services mocked |
 | Combined source syntax and git diff check | PASS locally |
 | Phase 3 GitHub Actions | PASS, [run 45999575777](https://github.com/shafielegacy/generasisunnah/actions/runs/45999575777), code commit 523054d97755f119d895b6bf42223528dceb33ca |
-| Actual overlapping Google executions | NOT VERIFIED, pending authorisation and execution |
-| Post-PDF failure with Google Drive | NOT VERIFIED, pending execution |
-| Read-only Google reconciliation and explicit recovery | NOT VERIFIED, pending execution |
-| Batch 2 Google generation | NOT VERIFIED, pending execution |
+| Actual overlapping Google executions | PASS, overlapping executions recorded below |
+| Post-PDF failure with Google Drive | PASS, actual isolated Google resources |
+| Read-only Google reconciliation and explicit recovery | PASS, actual isolated Google resources |
+| Batch 2 Google generation | PASS, actual isolated Google resources |
 | Actual Apps Script service timeout | NOT VERIFIED |
 
-The new standalone Google project is named GS26 Phase 3 Reliability QA — NO EMAIL. Setup currently waits at Google's authorisation dialog. Native code is prepared in Code.gs. No Phase 3 fixture resources or output have been confirmed yet.
+OWNER completed Google authorisation. All resources below were created in a fresh standalone QA project. Email transport remained disabled. The preparation run and Phase 2 evidence are preserved. Final code adds COMPLETE/NO_ACTION for a consistent finished issuance and retains REVIEW_REQUIRED for inconsistent evidence.
 
 ## Actual Google run procedure
 
@@ -56,3 +56,57 @@ A project editor can alter code, operator lists or properties. This trusted edit
 Known official IDs remain denial guards in Engine.gs. The new fixture bootstrap reads a verified Phase 2 QA template copy. It never opens the official registration or attendance workbook. There are no public write handlers, email transport, scheduled triggers, deployment commands or bulk issuance.
 
 Production V7, Pages, AutoCrat and Claude UI V2 are outside this branch's changes. Recovery execution must remain separate from read-only reconciliation. Production release remains HOLD pending actual evidence and owner review.
+
+## Executed Google evidence — 27 November 2026, MYT
+
+### Real overlapping executions
+
+| Execution | Actual start | Actual end | Result |
+| --- | --- | --- | --- |
+| phase3ConcurrentA | 20:39:05 | 20:39:54 | GENERATED, duration 49.521 seconds |
+| phase3ConcurrentB | 20:39:06 | 20:39:23 | Lock refusal, duration 16.494 seconds |
+
+Request A entered at 12:39:06.046Z, request B entered at 12:39:06.906Z. A logged LOCK_HELD at 12:39:10.848Z; B exited at 12:39:22.942Z while A remained running. The Apps Script Executions page independently displayed the overlapping completed runs. B did not reserve an identity or create output. One Slides copy and one PDF exist for the concurrent certificate. This is actual same-project Google concurrency evidence. Local mock lock assertions are recorded separately.
+
+### Failure, reconciliation and recovery
+
+- 20:40:22–20:40:40 — AFTER_PDF controlled fault. One existing PDF retained. Ledger became REVIEW_REQUIRED and a second generation request was blocked.
+- 20:43:29–20:43:42 — conflicting ledger PDF reference caused REVIEW_REQUIRED and recovery rejection. The fixture restored only its original ledger reference, with both changes audited. PDF files were not changed.
+- 20:45:16–20:45:31 — separately invoked recovery using manually reviewed Attempt ID, evidence hash and explicit confirmation. Ledger became GENERATED while PDF ID, SHA-256 and count remained unchanged. Re-generation was rejected.
+- Recovery review evidence hash was 44d01f7bec5347adfcf2dd581e907bf35b712437de6f1fbed6154a508214a591. It is historical evidence, not a reusable recovery token.
+- 20:40:55–20:41:05 — phase3InterruptA deliberately cancelled after reservation and before Drive writes. Ledger remains GENERATING, permanent reservation remains RESERVED and the read-only report requires REVIEW_REQUIRED. No output exists for this identity.
+- The first interruption inspection at 20:41:21 failed because the ScriptLock was still busy after cancellation. No lock bypass or reservation reset occurred. The later read-only inspection at 20:43:04 succeeded and explicit generation remained blocked. Natural Apps Script timeout is NOT VERIFIED.
+
+### Batch 2 and final state
+
+Preparation completed at 20:38:24. Simulated Asia/Kuala_Lumpur closure at 6 December 2026 23:59:59 was rejected; 7 December 00:00 was accepted. A fictional one-day participant was NOT_ELIGIBLE and approval was refused. Four other fictional participants had both registered-batch days.
+
+phase3BatchTwo ran 20:45:52–20:46:18. It generated one PDF and rejected the repeated generation attempt. The viewer showed one page, PESERTA QA BATCH DUA, Batch 2 — QA, QA-P3-SB2 and the visible red UJIAN SAHAJA — TIDAK SAH watermark. Concurrent and post-PDF certificates were also visually checked.
+
+Final verified inventory is three PDFs, three Slides copies, four distinct attempt identities, three GENERATED ledger rows and one held GENERATING row. Source inspection reported sourceUnchanged=true. Triggers UI showed 0 triggers. No deployment or email operation was performed.
+
+| Identity | Attempt ID | PDF ID | SHA-256 |
+| --- | --- | --- | --- |
+| QA-P3-CONCURRENT | 7f1f5cad-17a7-4cf7-bf0f-f291e1eaaa8b | 1gza6Lk9cLwgVaTTiCcWk7Fxnn5XwGfFT | 4144d304ee73807d84288fc9120e2f026eb0d17718ae2e02e582ee13f852e8e3 |
+| QA-P3-CRASH | 963ffdd1-6c01-4d97-aa27-10ae4871e88d | 196X6zSBFnthpD6cmCnRgg-euKyPIZPrw | e07ff49a46349cb91ff71e6f490cedab51066023959ac574ee1acd69003b03bf |
+| QA-P3-B2 | cfd46d94-102c-4936-abd9-e9f0c4869ac2 | 1s3j1anJ-xX5cZpho4DuB3_quHDMuFIds | e5ca2428e28a5dbfd5e6fb8f45222c68e74bacf7f34a6f2cbae49bbc848afc90 |
+| QA-P3-INTERRUPT | 0b6c587a-28b1-4d4f-80e6-aeda8120287e | No output, reservation retained | Not applicable |
+
+### Actual isolated resources
+
+| Resource | Google ID |
+| --- | --- |
+| Standalone project | 1E1FQFD2aMFtROmsHpYLR_L2kzKSnhDEJlQapNhFvayfUtIvDiDBxFCX2 |
+| Fictional source | 1Ho1GC_MKzFSErrYVIr5jXACbGzXZLWjm3fvcOisJrZI |
+| Issuance ledger | 1Xic258nBWpjinE0QXcetlV6feTYTzsMI00ynpwHLYhg |
+| QA Slides template | 1zKxA3MGDNWKTe2wzr6tAdsyeR-EzExDiKlJp46pdY4k |
+| PDF output folder | 1NuaybfjladUdfkRuEooKr0GsWU1C9z5j |
+| QA root folder | 1oef5Twe1Z6v-auBImRmv-xciDsvEJSQ0 |
+
+### Execution caveats and remaining release gates
+
+A draft final-verification helper initially requested an extra Apps Script trigger-inspection permission. That action was cancelled; the helper was changed to use existing permissions and trigger inspection was completed through the read-only UI. No scope expansion was accepted. An editor paste syntax issue was corrected before execution. The initial final snapshot assertion also exposed property enumeration order instability; property keys are now sorted before snapshot hashing. These diagnostic attempts did not generate additional PDFs.
+
+Production remains HOLD. Reconcile real attendance after both programme days, confirm eligibility and owner issuance approval, complete production security review and plan a separately approved deployment. Natural service timeout, provider outage and cross-project competing writers remain outside the demonstrated evidence. Production operator separation and tamper-resistant audit require a separate design review. Preserve the abandoned attempt and all output evidence; do not clear reservations to retry.
+
+Final read-only verification ran at 20:51:20–20:51:36 MYT. FINAL_READ_ONLY_VERIFIED confirmed three PDFs, three Slides copies and four attempts. All three finished records returned COMPLETE; the abandoned record returned REVIEW_REQUIRED. Before/after ledger, audit, sorted properties and Drive inventory hashes matched. Source remained unchanged.

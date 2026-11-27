@@ -95,3 +95,5 @@ GitHub Actions menjalankan ujian automatik apabila folder staging ini dikemas ki
 - Semakan production security dan release approval.
 
 **Release gate:** Semuanya HOLD sehingga owner memberi GO baharu selepas keputusan integrasi dan review. Jangan merge staging ke main atau deploy GAS V6.
+
+Phase 3 Google checkpoint: actual overlapping executions, retained-PDF recovery and Batch 2 generation verified on 27 November 2026. Three QA PDFs retained, email OFF, production HOLD. Natural Apps Script timeout remains NOT VERIFIED. See the Phase 3 report for evidence and known limits.

@@ -172,14 +172,16 @@ function ecReconcileRead_(cfg,key) {
   const pdfs = output.filter(file => file.mime === MimeType.PDF);
   const slides = output.filter(file => file.mime === MimeType.GOOGLE_SLIDES);
   const pdf = pdfs.length === 1 ? pdfs[0] : null;
-  const recoverable = !!pdf && pdf.name === name+'.pdf' && slides.length === 1 &&
+  const consistent = !!pdf && pdf.name === name+'.pdf' && slides.length === 1 &&
     (!attempt.slidesId || slides[0].id === attempt.slidesId) && audit.some(row => row[0] === 'ATTEMPT_RESERVED') &&
-    ['GENERATING','REVIEW_REQUIRED'].includes(record.row[3]) &&
     (!attempt.pdfId || attempt.pdfId === pdf.id) && (!attempt.pdfHash || attempt.pdfHash === pdf.hash) &&
     (!record.row[4] || String(record.row[4]) === pdf.id) &&
     (!record.row[12] || String(record.row[12]) === pdf.hash);
+  const complete = consistent && record.row[3] === 'GENERATED' && attempt.state === 'GENERATED' &&
+    attempt.pdfId === pdf.id && record.row[4] === pdf.id && attempt.pdfHash === pdf.hash && record.row[12] === pdf.hash;
+  const recoverable = consistent && ['GENERATING','REVIEW_REQUIRED'].includes(record.row[3]);
   const report = {receipt:key,attempt,ledgerStatus:record.row[3],ledgerPdfId:record.row[4],
-    output,audit,recoverable,reconciliationStatus:recoverable?'MANUAL_APPROVAL_REQUIRED':'REVIEW_REQUIRED',action:recoverable?'MANUAL_LINK_EXISTING_PDF':'HOLD_MANUAL_REVIEW'};
+    output,audit,recoverable,reconciliationStatus:complete?'COMPLETE':recoverable?'MANUAL_APPROVAL_REQUIRED':'REVIEW_REQUIRED',action:complete?'NO_ACTION':recoverable?'MANUAL_LINK_EXISTING_PDF':'HOLD_MANUAL_REVIEW'};
   report.evidenceHash = ecDigest_(report);
   return report;
 }
