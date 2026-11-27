@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- PRATONTON REKA BENTUK SAHAJA. connect-src 'none' menyekat fetch/XHR/WebSocket/beacon ke mana-mana pelayan. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#073A2E">
+  <meta name="description" content="Pratonton reka bentuk V2 portal Generasi Sunnah 2026. Data rekaan sahaja, tidak disambung ke sistem sebenar.">
+  <title>GS26 Pratonton V2</title>
+  <link rel="icon" href="./assets/sl-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="./assets/preview.css">
+  <script defer src="./assets/preview.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Langkau ke kandungan</a>
+
+  <div class="ribbon" role="note">
+    <span class="ribbon-dot" aria-hidden="true"></span>
+    <span><b>Pratonton V2</b> · Data rekaan · Tiada sambungan ke sistem sebenar</span>
+    <button type="button" class="ribbon-btn" data-open-demo>Panel demo</button>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#/utama" aria-label="Generasi Sunnah 2026, halaman utama">
+        <span class="brand-mark"><img src="./assets/sl-logo.png" alt="" width="40" height="36"></span>
+        <span class="brand-text"><strong>Generasi Sunnah</strong><small><span lang="ar" dir="rtl" class="ar">جيل السنة</span> · 2026</small></span>
+      </a>
+      <nav class="nav-desktop" aria-label="Navigasi utama">
+        <a href="#/utama" data-nav="utama">Utama</a>
+        <a href="#/kuota" data-nav="kuota">Kuota</a>
+        <a href="#/checkin" data-nav="checkin">Check-in</a>
+        <a href="#/urusetia" data-nav="urusetia">Urusetia</a>
+        <a href="#/keadaan" data-nav="keadaan">Keadaan</a>
+      </nav>
+      <span class="clock-chip" id="clockChip" title="Tarikh simulasi pratonton (MYT)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span id="clockText">—</span>
+      </span>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ===================== 1. UTAMA ===================== -->
+    <section class="view" data-view="utama" aria-labelledby="h-utama">
+      <div class="hero">
+        <div class="hero-pattern" aria-hidden="true"></div>
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Surau Jabal Nur · Program 2026</p>
+            <h1 id="h-utama">Semudah scan.<br><em>Secepat hadir.</em></h1>
+            <p class="lead">Portal rasmi Program Generasi Sunnah 2026. Sahkan kehadiran anak anda dalam beberapa saat, semak kuota terkini, dan ikuti jadual program.</p>
+
+            <div class="live-card" id="heroLive" aria-live="polite">
+              <div class="live-row">
+                <span class="live-dot" id="heroDot" aria-hidden="true"></span>
+                <span class="live-label" id="heroLabel">Memuat status sesi…</span>
+              </div>
+              <p class="live-sub" id="heroSub"></p>
+              <div class="countdown" id="heroCountdown" hidden>
+                <div><strong data-cd="d">0</strong><small>hari</small></div>
+                <div><strong data-cd="h">0</strong><small>jam</small></div>
+                <div><strong data-cd="m">0</strong><small>minit</small></div>
+              </div>
+            </div>
+
+            <div class="hero-cta">
+              <a class="btn btn-gold btn-lg" href="#/checkin">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M8 12l3 3 5-6"/></svg>
+                Sahkan kehadiran
+              </a>
+              <a class="btn btn-ghost-light btn-lg" href="#/kuota">Lihat kuota</a>
+            </div>
+          </div>
+          <div class="hero-art">
+            <div class="arch">
+              <img src="./assets/logo-generasi-sunnah.png" alt="Logo Generasi Sunnah 2026 dengan pemanah, seni Islamik dan tulisan emas" width="1350" height="900" fetchpriority="high">
+              <span class="arch-caption" aria-hidden="true">28–29 Nov · 5–6 Dis 2026</span>
+            </div>
+          </div>
+        </div>
+        <svg class="hero-curve" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60V20C240 52 480 60 720 40S1200 0 1440 20v40z"/></svg>
+      </div>
+
+      <div class="wrap stack-xl">
+        <section aria-labelledby="h-jadual">
+          <div class="section-head">
+            <div><p class="kicker">Jadual</p><h2 id="h-jadual">Dua batch, empat hari</h2></div>
+            <p class="section-note">Semua waktu mengikut waktu Malaysia (MYT).</p>
+          </div>
+          <div class="batch-grid" id="scheduleGrid"></div>
+        </section>
+
+        <section aria-labelledby="h-cara">
+          <div class="section-head">
+            <div><p class="kicker">Cara check-in</p><h2 id="h-cara">Tiga langkah, kurang seminit</h2></div>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <span class="step-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg></span>
+              <span class="step-n">1</span>
+              <h3>Imbas QR poster</h3>
+              <p>QR di kaunter pendaftaran membuka portal ini terus. Tiada aplikasi diperlukan.</p>
+            </li>
+            <li class="step">
+              <span class="step-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h3"/></svg></span>
+              <span class="step-n">2</span>
+              <h3>Masukkan resit &amp; telefon</h3>
+              <p>5 aksara terakhir resit (contoh <b class="mono">R0049</b>) dan 4 digit terakhir telefon penjaga.</p>
+            </li>
+            <li class="step">
+              <span class="step-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span>
+              <span class="step-n">3</span>
+              <h3>Tunjukkan skrin BERJAYA</h3>
+              <p>Skrin hijau bermaksud kehadiran sudah tersimpan. Tunjukkan kepada urusetia jika diminta.</p>
+            </li>
+          </ol>
+        </section>
+
+        <section aria-labelledby="h-kuota-mini">
+          <div class="section-head">
+            <div><p class="kicker">Pendaftaran</p><h2 id="h-kuota-mini">Status kuota semasa</h2></div>
+            <a class="link-arrow" href="#/kuota">Papan kuota penuh <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="mini-quota" id="miniQuota"></div>
+        </section>
+
+        <section aria-labelledby="h-faq" class="faq">
+          <div class="section-head"><div><p class="kicker">Soalan lazim</p><h2 id="h-faq">Sebelum anda datang</h2></div></div>
+          <details>
+            <summary>Saya tiada resit atau terlupa nombor resit.</summary>
+            <p>Tiada masalah. Rujuk urusetia di meja pendaftaran. Mereka boleh mencari nama peserta dan merekod kehadiran secara manual.</p>
+          </details>
+          <details>
+            <summary>Skrin menunjukkan “STATUS TIDAK DIKETAHUI”. Apa perlu dibuat?</summary>
+            <p>Ini bermaksud sambungan terputus sebelum sistem sempat mengesahkan. Kehadiran <b>mungkin</b> sudah tersimpan. Jangan tekan berulang kali; tunjukkan skrin kepada urusetia untuk semakan.</p>
+          </details>
+          <details>
+            <summary>Bolehkah saya check-in lebih awal, sebelum hari program?</summary>
+            <p>Tidak. Sistem hanya menerima check-in pada tarikh sesi yang sebenar dan selepas urusetia membuka kaunter.</p>
+          </details>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===================== 2. KUOTA ===================== -->
+    <section class="view" data-view="kuota" aria-labelledby="h-kuota" hidden>
+      <div class="page-head">
+        <div class="wrap page-head-inner">
+          <div>
+            <p class="kicker kicker-light">Papan kuota</p>
+            <h1 id="h-kuota">Status pendaftaran</h1>
+            <p class="page-sub" id="quotaUpdated" aria-live="polite">—</p>
+          </div>
+          <button type="button" class="btn btn-ghost-light" id="quotaRefresh">
+            <svg class="ic-refresh" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>
+            Muat semula
+          </button>
+        </div>
+      </div>
+      <div class="wrap stack-lg lift">
+        <div class="kpi-row" id="quotaKpis"></div>
+        <div class="quota-grid" id="quotaCards"></div>
+        <p class="fineprint">Angka dibaca terus daripada tab <span class="mono">DASHBOARD KUOTA</span> setiap 2 minit dalam sistem sebenar. Pratonton ini menggunakan angka rekaan.</p>
+      </div>
+    </section>
+
+    <!-- ===================== 3. CHECK-IN ===================== -->
+    <section class="view" data-view="checkin" aria-labelledby="h-checkin" hidden>
+      <div class="checkin-stage">
+        <div class="hero-pattern soft" aria-hidden="true"></div>
+        <div class="checkin-card" id="checkinCard">
+          <div class="checkin-head">
+            <img src="./assets/sl-logo.png" alt="" width="44" height="40">
+            <div>
+              <p class="kicker">Mini Check-in</p>
+              <h1 id="h-checkin">Sahkan kehadiran</h1>
+            </div>
+          </div>
+          <div class="session-banner" id="sessionBanner" role="status" aria-live="polite"></div>
+
+          <form id="checkinForm" class="checkin-form" novalidate autocomplete="off">
+            <div class="field">
+              <label for="ciReceipt">5 aksara terakhir nombor resit</label>
+              <div class="input-affix">
+                <span class="affix" aria-hidden="true">GS26_</span>
+                <input id="ciReceipt" name="receipt" class="input input-lg mono" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="5" placeholder="R0049" aria-describedby="ciReceiptHelp ciReceiptErr" required>
+              </div>
+              <p class="help" id="ciReceiptHelp">Taip R dan 4 digit sahaja. Awalan GS26_ ditambah secara automatik.</p>
+              <p class="err" id="ciReceiptErr" hidden></p>
+            </div>
+            <div class="field">
+              <label for="ciPhone">4 digit terakhir telefon penjaga</label>
+              <div class="pin" data-pin>
+                <input id="ciPhone" name="phone" class="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-describedby="ciPhoneErr" required>
+                <span class="pin-cell" aria-hidden="true"></span><span class="pin-cell" aria-hidden="true"></span><span class="pin-cell" aria-hidden="true"></span><span class="pin-cell" aria-hidden="true"></span>
+              </div>
+              <p class="err" id="ciPhoneErr" hidden></p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-xl btn-block" id="ciSubmit">
+              <span class="btn-label">Sahkan kehadiran</span>
+            </button>
+            <p class="help center">Tiada resit? Rujuk urusetia di meja pendaftaran.</p>
+          </form>
+
+          <div class="outcome-host" id="outcomeHost" aria-live="assertive" hidden></div>
+        </div>
+        <button type="button" class="demo-hint" data-open-demo>Kod demo: <b class="mono" id="hintCode">R9001</b> + <b class="mono">1234</b> · lihat Panel demo untuk senarai penuh</button>
+      </div>
+    </section>
+
+    <!-- ===================== 4. URUSETIA ===================== -->
+    <section class="view" data-view="urusetia" aria-labelledby="h-urusetia" hidden>
+      <div id="staffLogin" class="checkin-stage">
+        <div class="hero-pattern soft" aria-hidden="true"></div>
+        <form class="checkin-card login-card" id="loginForm" novalidate>
+          <div class="checkin-head">
+            <span class="lock-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+            <div><p class="kicker">Akses terhad</p><h1 id="h-urusetia">Log masuk urusetia</h1></div>
+          </div>
+          <div class="field">
+            <label for="staffKey">Kunci urusetia</label>
+            <div class="input-affix">
+              <input id="staffKey" class="input input-lg" type="password" minlength="8" autocomplete="off" aria-describedby="staffKeyErr" required>
+              <button type="button" class="affix-btn" id="toggleKey" aria-label="Tunjukkan kunci" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="err" id="staffKeyErr" hidden></p>
+            <p class="help">Pratonton: sebarang kunci sekurang-kurangnya 8 aksara. Tiada kunci sebenar disimpan atau dihantar.</p>
+          </div>
+          <button class="btn btn-primary btn-xl btn-block" id="loginBtn"><span class="btn-label">Log masuk</span></button>
+        </form>
+      </div>
+
+      <div id="staffDash" hidden>
+        <div class="page-head compact">
+          <div class="wrap page-head-inner">
+            <div>
+              <p class="kicker kicker-light">Dashboard urusetia</p>
+              <h1>Kaunter kehadiran</h1>
+            </div>
+            <div class="head-actions">
+              <label class="operator">
+                <span class="sr-only">Nama petugas</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                <input id="operatorName" maxlength="60" value="Urusetia Meja 1" aria-label="Nama petugas">
+              </label>
+              <button type="button" class="btn btn-ghost-light" id="logoutBtn">Log keluar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="wrap lift stack-lg">
+          <div class="seg" role="tablist" aria-label="Pilih sesi program" id="sessionSeg"></div>
+
+          <div class="dash-grid">
+            <div class="stack-md">
+              <div class="control-card" id="controlCard"></div>
+              <div class="kpi-row kpi-4" id="staffKpis"></div>
+
+              <div class="card roster">
+                <div class="roster-head">
+                  <h2>Senarai peserta</h2>
+                  <div class="chips" role="radiogroup" aria-label="Tapis senarai" id="filterChips">
+                    <button type="button" class="chip" role="radio" aria-checked="true" data-filter="all">Semua</button>
+                    <button type="button" class="chip" role="radio" aria-checked="false" data-filter="absent">Belum hadir</button>
+                    <button type="button" class="chip" role="radio" aria-checked="false" data-filter="present">Hadir</button>
+                  </div>
+                </div>
+                <div class="search">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  <input type="search" id="rosterSearch" placeholder="Cari nama atau nombor resit" aria-label="Cari nama atau nombor resit" autocomplete="off">
+                </div>
+                <ul class="roster-list" id="rosterList" aria-live="polite"></ul>
+              </div>
+            </div>
+
+            <aside class="stack-md">
+              <div class="card">
+                <h2 class="card-title">Aktiviti terkini</h2>
+                <ol class="feed" id="activityFeed"></ol>
+              </div>
+              <div class="card sop">
+                <h2 class="card-title">Senarai semak kaunter</h2>
+                <ol class="checklist">
+                  <li><input type="checkbox" id="sop1"><label for="sop1">Pastikan sesi hari ini dipilih</label></li>
+                  <li><input type="checkbox" id="sop2"><label for="sop2">Buka check-in bila kaunter bersedia</label></li>
+                  <li><input type="checkbox" id="sop3"><label for="sop3">Uji sekali dengan peserta dummy, semak satu rekod</label></li>
+                  <li><input type="checkbox" id="sop4"><label for="sop4">STATUS TIDAK DIKETAHUI: semak senarai dahulu</label></li>
+                  <li><input type="checkbox" id="sop5"><label for="sop5">Tamat sesi: tutup check-in &amp; semak jumlah</label></li>
+                </ol>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 5. KEADAAN ===================== -->
+    <section class="view" data-view="keadaan" aria-labelledby="h-keadaan" hidden>
+      <div class="page-head">
+        <div class="wrap page-head-inner">
+          <div>
+            <p class="kicker kicker-light">Spesimen reka bentuk</p>
+            <h1 id="h-keadaan">Semua keadaan status</h1>
+            <p class="page-sub">Setiap keadaan yang boleh dilihat oleh penjaga dan urusetia, mengikut logik check-in production (BERJAYA, GAGAL, TIDAK DIKETAHUI).</p>
+          </div>
+        </div>
+      </div>
+      <div class="wrap stack-xl gallery-wrap" id="stateGallery"></div>
+    </section>
+  </main>
+
+  <footer class="foot wrap">
+    <span>© Generasi Sunnah 2026 · Surau Jabal Nur</span>
+    <span>Pratonton reka bentuk V2 · bukan portal production</span>
+  </footer>
+
+  <nav class="tabbar" aria-label="Navigasi mudah alih">
+    <a href="#/utama" data-nav="utama"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Utama</span></a>
+    <a href="#/kuota" data-nav="kuota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Kuota</span></a>
+    <a href="#/checkin" data-nav="checkin" class="tab-primary"><span class="tab-fab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M8 12l3 3 5-6"/></svg></span><span>Check-in</span></a>
+    <a href="#/urusetia" data-nav="urusetia"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Urusetia</span></a>
+    <a href="#/keadaan" data-nav="keadaan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg><span>Keadaan</span></a>
+  </nav>
+
+  <!-- Panel demo -->
+  <div class="drawer-scrim" id="demoScrim" hidden></div>
+  <aside class="drawer" id="demoDrawer" aria-labelledby="h-demo" hidden>
+    <div class="drawer-head">
+      <h2 id="h-demo">Panel demo</h2>
+      <button type="button" class="icon-btn" id="demoClose" aria-label="Tutup panel demo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="help">Kawalan ini hanya wujud dalam pratonton untuk mensimulasikan keadaan. Tiada data dihantar ke mana-mana.</p>
+    <div class="field">
+      <label for="demoDate">Tarikh &amp; masa simulasi (MYT)</label>
+      <select id="demoDate" class="input"></select>
+    </div>
+    <div class="field">
+      <label for="demoQuota">Data kuota</label>
+      <select id="demoQuota" class="input">
+        <option value="ok">Berjaya dimuat</option>
+        <option value="loading">Sedang memuat (perlahan)</option>
+        <option value="error">Gagal dimuat</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="demoPublic">Status sesi awam</label>
+      <select id="demoPublic" class="input">
+        <option value="ok">Dapat disemak</option>
+        <option value="error">Tidak dapat disemak (rangkaian)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="demoOutcome">Keputusan check-in</label>
+      <select id="demoOutcome" class="input">
+        <option value="auto">Ikut kod demo (logik sebenar)</option>
+        <option value="SUCCESS">Paksa: BERJAYA</option>
+        <option value="ALREADY">Paksa: SUDAH DIREKOD</option>
+        <option value="FAILED">Paksa: GAGAL</option>
+        <option value="RECOVERED">Paksa: terputus → disahkan tersimpan</option>
+        <option value="UNKNOWN">Paksa: STATUS TIDAK DIKETAHUI</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="demoStaff">Tindakan urusetia (tanda hadir / buka-tutup)</label>
+      <select id="demoStaff" class="input">
+        <option value="ok">Berjaya</option>
+        <option value="unknown">Sambungan terputus (status tidak pasti)</option>
+        <option value="expired">Sesi log masuk tamat</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="demoTheme">Tema</label>
+      <select id="demoTheme" class="input">
+        <option value="auto">Ikut peranti</option>
+        <option value="light">Cerah</option>
+        <option value="dark">Gelap</option>
+      </select>
+    </div>
+    <div class="demo-codes">
+      <h3>Kod demo peserta <span class="help" id="demoCodesNote"></span></h3>
+      <table>
+        <thead><tr><th scope="col">Resit</th><th scope="col">Telefon</th><th scope="col">Hasil</th></tr></thead>
+        <tbody id="demoCodes"></tbody>
+      </table>
+    </div>
+    <button type="button" class="btn btn-outline btn-block" id="demoReset">Set semula data rekaan</button>
+  </aside>
+
+  <!-- Sistem modal premium: satu komponen untuk semua pengesahan & keputusan penting -->
+  <dialog class="modal" id="gsModal" aria-labelledby="mTitle" aria-describedby="mBody">
+    <div class="modal-card" id="mCard">
+      <div class="m-medal" id="mMedal" aria-hidden="true"></div>
+      <p class="m-tag" id="mTag"></p>
+      <h2 id="mTitle"></h2>
+      <div class="m-body" id="mBody"></div>
+      <div class="m-extra" id="mExtra"></div>
+      <div class="modal-actions" id="mActions"></div>
+    </div>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>
