@@ -113,3 +113,21 @@ Maklumat lama **tidak menggantikan** status production terkini. Angka pendaftara
 | eCERT production untuk peserta sebenar | **HOLD** |
 
 **Peraturan dokumentasi:** nilai tarikh/jumlah daripada snapshot kekal sebagai sejarah. Kemaskini status melalui append checkpoint dan bukti, jangan tulis semula sejarah seolah-olah semua ujian pernah PASS.
+
+
+## 8. Checkpoint tambahan — Premium UI V2 LIVE (27 November, malam)
+
+**Sejarah di atas dikekalkan mengikut waktu asal.** Ini ialah kemas kini status selepas pelepasan yang tidak wujud pada checkpoint awal.
+
+- **OWNER DESIGN APPROVED:** 5 skrin, emerald/emas, popup modal 3D, mod gelap, navigasi mobile, dan pilihan sesi progresif telah diluluskan sebagai milestone reka bentuk.
+- **OWNER LIVE GO:** pemindahan reka bentuk ke frontend production diberi kebenaran secara berasingan, bersyarat QA dan tanpa perubahan backend.
+- **PR #6:** prototaip interaktif terasing menggunakan data rekaan; kekal Draft, tidak di-merge.
+- **PR #7:** frontend V2 LIVE merged `2148443`, GitHub Pages release dilaporkan SUCCESS 20:31 MYT, 27 Nov 2026.
+- **PR #9:** dokumentasi release merged `e37d354`.
+- **Ujian:** 21/21 Playwright dengan GAS mock; 11/11 static; 29/29 date guard; 9/9 legacy regression. Production read-only: UI, status awam, kuota (Batch 1 70/70; Batch 2 76/70), paparan luar tarikh, mod gelap dan telefon PASS menurut laporan release. Tidak semua tindakan urusetia atau penulisan sebenar telah disahkan.
+- **Production scope:** `index.html`, `assets/gs-v2.js`, `assets/gs-v2.css` sahaja bagi fungsi frontend; GAS V7, Sheets, AutoCrat, eCERT dan URL QR poster tidak berubah.
+- **Rollback:** cawangan `rollback/pre-ui-v2-20261127` menunjuk keadaan sebelum V2 (`114eb7b`); merge UI `2148443` boleh di-revert jika diperlukan.
+- **28 Nov UAT:** log masuk urusetia, buka `b1d1`, uji dummy resit/telefon selepas semak identiti terkini dalam Sheets, sahkan tepat satu baris `KEHADIRAN_GS` dan hasil `SUDAH DIREKOD` pada cubaan kedua. **Belum diuji pada waktu checkpoint**, jadi status E2E masih **PENDING**.
+- **eCERT:** Phase 2 Google QA 32 assertion PASS dan CI PASS pada Draft PR #5 (staging sahaja); Phase 3 reliability sedang diusahakan secara terasing. eCERT production **HOLD**, tiada email tambahan dibenarkan.
+
+Lihat [rekod LIVE UI V2](GS_UI_V2_LIVE_RELEASE_2026-11-27.md) untuk bukti ujian terperinci, batasan dan arahan rollback.
