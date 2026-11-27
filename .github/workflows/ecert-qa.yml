@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging/ecert-gs26-review
+      - staging/ecert-phase2-google-qa
     paths:
       - 'staging/native-ecert/**'
       - '.github/workflows/ecert-qa.yml'
@@ -29,5 +30,10 @@ jobs:
           cp staging/native-ecert/Engine.gs /tmp/gs26-engine.js
           node --check /tmp/gs26-eligibility.js
           node --check /tmp/gs26-engine.js
+          cp staging/native-ecert/Integration_QA.gs /tmp/gs26-integration-qa.js
+          node --check /tmp/gs26-integration-qa.js
+          node --check staging/native-ecert/test-phase2.js
       - name: Run offline QA
-        run: node staging/native-ecert/test-eligibility.js
+        run: |
+          node staging/native-ecert/test-eligibility.js
+          node staging/native-ecert/test-phase2.js
