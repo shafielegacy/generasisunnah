@@ -131,3 +131,20 @@ Maklumat lama **tidak menggantikan** status production terkini. Angka pendaftara
 - **eCERT:** Phase 2 Google QA 32 assertion PASS dan CI PASS pada Draft PR #5 (staging sahaja); Phase 3 reliability sedang diusahakan secara terasing. eCERT production **HOLD**, tiada email tambahan dibenarkan.
 
 Lihat [rekod LIVE UI V2](GS_UI_V2_LIVE_RELEASE_2026-11-27.md) untuk bukti ujian terperinci, batasan dan arahan rollback.
+
+
+## 9. Checkpoint tambahan — Native eCERT Phase 3 Reliability QA selesai (27 November, sekitar 20:51 MYT)
+
+**Status milestone:** QA terasing **PASS WITH LIMITATIONS**, **production eCERT HOLD**. Baca bukti penuh dalam [Phase 3 report pada branch staging](https://github.com/shafielegacy/generasisunnah/blob/staging/ecert-phase3-reliability/staging/native-ecert/PHASE3_RELIABILITY_QA_2026-11-27.md).
+
+- [Draft PR #8](https://github.com/shafielegacy/generasisunnah/pull/8), `staging/ecert-phase3-reliability` → `staging/ecert-phase2-google-qa`, commit `13a0120791507cf499be6e39d25cf5b2fee47bc3`: **open/Draft, tidak merge**.
+- [GitHub Actions akhir](https://github.com/shafielegacy/generasisunnah/actions/runs/46002351278): **completed/success** pada commit Phase 3 tersebut; regresi offline **57/57 PASS** (25 eligibility, 10 Phase 2, 22 reliability).
+- **Google concurrency sebenar PASS**: `phase3ConcurrentA` dan `phase3ConcurrentB` bertindih; permintaan B ditolak ketika A memegang ScriptLock; hanya satu sijil/PDF identiti concurrent terhasil.
+- **Controlled post-PDF crash PASS**: PDF kekal, ledger `REVIEW_REQUIRED`, percubaan jana semula disekat. Read-only reconciliation menyemak Attempt_ID, output PDF ID/hash, ledger dan audit.
+- **Explicit QA recovery PASS**: selepas semakan operator/QA, PDF asal yang sama dipautkan (ID/hash/bilangan fail tidak berubah), bukan dijana gantian. Konflik evidence menyebabkan `REVIEW_REQUIRED` dan recovery ditolak.
+- **Batch 2 Google QA PASS**: tutup batch menggunakan sempadan waktu Malaysia selepas Hari 2, satu-hari tidak layak, sijil QA bertanda `UJIAN SAHAJA — TIDAK SAH`.
+- **Final Google read-only verification PASS**: 3 PDF, 3 salinan Slides, 4 Attempt_ID, 3 ledger `GENERATED`, satu `GENERATING` abandoned yang masih direkod sebagai `REVIEW_REQUIRED` semasa rekonsiliasi. Tiada penghapusan PDF atau reset reservation.
+- **NOT VERIFIED**: timeout semula jadi Apps Script, gangguan provider, cross-project competing writers, peranan operator production serta audit kalis gangguan. Deliberate cancellation dalam ujian bukan bukti natural timeout.
+- **STRICT HOLD**: e-mel OFF, tiada trigger, tiada sijil peserta sebenar, tiada merge/deploy GAS, Sheets atau AutoCrat production.
+
+**Keutamaan operasi seterusnya:** 28 November `b1d1` — semak UI V2 login urusetia, buka check-in, telefon dummy `R0146`/`6789` selepas sahkan formula resit dan **tepat satu** baris `KEHADIRAN_GS`; cubaan kedua mesti menghasilkan `SUDAH DIREKOD` tanpa duplikasi. Jangan alihkan perhatian atau ubah production sebelum ujian lapangan.
