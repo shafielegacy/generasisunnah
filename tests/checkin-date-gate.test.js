@@ -1,0 +1,28 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const gs=fs.readFileSync(path.join(root,'gas/Code.gs'),'utf8');
+const ui=fs.readFileSync(path.join(root,'js/checkin.js'),'utf8');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+new vm.Script(gs);new vm.Script(ui);
+const ctx={Date,console,qaDay:'2026-11-27',qaOpened:true,qaReceived:''};
+vm.createContext(ctx);
+vm.runInContext(gs,ctx);
+vm.runInContext("gsDay_=()=>globalThis.qaDay;gsOpen_=()=>globalThis.qaOpened;gsRateLimit_=()=>{};gsRoster_=()=>[{receipt:'GS26_R0144',batch:1,phoneDigits:'0000006789'},{receipt:'GS26_R0900',batch:2,phoneDigits:'0000006789'}];gsWriteCheckin_=(s,r)=>{globalThis.qaReceived=s+':'+r;return {ok:true};};",ctx);
+let n=0;function test(label,fn){fn();console.log('PASS',label);n++;}
+const set=(d,o=true)=>{ctx.qaDay=d;ctx.qaOpened=o;};
+const check=(receipt='GS26_R0144',last4='6789')=>ctx.gsSelfCheckin({receipt,last4});
+test('Nov 27 check-in FAIL regardless of open flag',()=>{set('2026-11-27');assert.throws(()=>check(),/belum bermula/);});
+test('Nov 28 Batch 1 Day 1',()=>{set('2026-11-28');assert.equal(check().ok,true);assert.equal(ctx.qaReceived,'b1d1:GS26_R0144');});
+test('Nov 29 Batch 1 Day 2',()=>{set('2026-11-29');assert.equal(check().ok,true);assert.equal(ctx.qaReceived,'b1d2:GS26_R0144');});
+test('Dec 5 Batch 2 Day 1',()=>{set('2026-12-05');assert.equal(check('GS26_R0900').ok,true);assert.equal(ctx.qaReceived,'b2d1:GS26_R0900');});
+test('Dec 6 Batch 2 Day 2',()=>{set('2026-12-06');assert.equal(check('GS26_R0900').ok,true);assert.equal(ctx.qaReceived,'b2d2:GS26_R0900');});
+test('Nov 30 FAIL',()=>{set('2026-11-30');assert.throws(()=>check(),/belum bermula/);});
+test('wrong batch FAIL',()=>{set('2026-12-05');assert.throws(()=>check(),/batch/);});
+test('closed session FAIL',()=>{set('2026-11-28',false);assert.throws(()=>check(),/belum dibuka/);});
+test('wrong phone FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_R0144','1111'),/tidak dapat disahkan/);});
+test('invalid receipt FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_X0144'),/tidak sah/);});
+test('staff write date guard',()=>{set('2026-11-27');assert.throws(()=>ctx.gsRequireEvent_('b1d1'),/luar tarikh/);});
+test('frontend no QR code dependence',()=>{assert(!ui.includes('hasQR'));assert(!ui.includes('qrCode'));assert(ui.includes("api('gsSelfCheckin',{receipt:fullReceipt,last4:$('gsPhone').value})"));});
+test('GitHub homepage retained',()=>{assert(!index.includes('location.replace(dest.href)'));assert(index.includes('id="gsNativeApp"'));});
+console.log(n+' offline QA tests passed; NO GOOGLE CALLS.');
