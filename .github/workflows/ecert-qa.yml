@@ -5,6 +5,7 @@ on:
     branches:
       - staging/ecert-gs26-review
       - staging/ecert-phase2-google-qa
+      - staging/ecert-phase3-reliability
     paths:
       - 'staging/native-ecert/**'
       - '.github/workflows/ecert-qa.yml'
@@ -33,7 +34,13 @@ jobs:
           cp staging/native-ecert/Integration_QA.gs /tmp/gs26-integration-qa.js
           node --check /tmp/gs26-integration-qa.js
           node --check staging/native-ecert/test-phase2.js
+          cp staging/native-ecert/Reliability.gs /tmp/gs26-reliability.js
+          cp staging/native-ecert/Phase3_QA.gs /tmp/gs26-phase3-qa.js
+          node --check /tmp/gs26-reliability.js
+          node --check /tmp/gs26-phase3-qa.js
+          node --check staging/native-ecert/test-reliability.js
       - name: Run offline QA
         run: |
           node staging/native-ecert/test-eligibility.js
           node staging/native-ecert/test-phase2.js
+          node staging/native-ecert/test-reliability.js

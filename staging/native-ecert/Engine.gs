@@ -12,7 +12,7 @@ const EC_OFFICIAL_SOURCE_ID_ = '1YOlKCIfBd6FNJji6p4SjQtuBQOqr3zVFbtC2Nj1mwvc';
 const EC_OFFICIAL_TEMPLATE_ID_ = '1tFY8IqyXKdUloW8bSnp1Z1TNmvN6ojHFyqMmgvY_6gU';
 const EC_OFFICIAL_FOLDER_ID_ = '17IuUvq4NkLAM7f78Lg6L6JaXh44KCNjj';
 const EC_LEDGER_HEADERS_ = ['No_Resit','No_Sijil','Batch','Status','PDF_ID','PDF_URL',
-  'Attempts','Updated_At','Updated_By','Note'];
+  'Attempts','Updated_At','Updated_By','Note','Attempt_ID','Slides_ID','PDF_SHA256'];
 const EC_AUDIT_HEADERS_ = ['Waktu','Operator','Tindakan','No_Resit','Butiran'];
 const EC_CORRECTION_HEADERS_ = ['No_Resit','Sesi','Hadir','Alasan','Operator','Waktu'];
 const EC_BATCH_HEADERS_ = ['Batch','Status','Closed_At','Closed_By','Snapshot_Hash'];
@@ -134,7 +134,7 @@ function ecIssue_(tab,receipt) {
   return matches.length ? matches[0] : null;
 }
 function ecUpdateIssue_(tab,record,actor,status,patch,note) {
-  const row = record.row.slice(0,EC_LEDGER_HEADERS_.length);
+  const row = EC_LEDGER_HEADERS_.map((header,index) => record.row[index] === undefined ? '' : record.row[index]);
   row[3] = status;
   if (patch) Object.keys(patch).forEach(k => { row[Number(k)] = patch[k]; });
   row[7] = new Date();
@@ -233,73 +233,16 @@ function ecApproveQa(receipt) {
     if (ecIssue_(ledger.issue,key)) throw new Error('No_Resit sudah mempunyai rekod sijil.');
     if (ecRows_(ledger.issue).some(r => ecKey_(r[1])===p.certificate))
       throw new Error('No_Sijil sudah digunakan.');
-    ledger.issue.appendRow([key,p.certificate,p.batch,'APPROVED','','',0,new Date(),actor,'']);
-    ecLog_(ledger.audit,actor,'APPROVED',key,'QA');
+    const attemptId = Utilities.getUuid();
+    ledger.issue.appendRow([key,p.certificate,p.batch,'APPROVED','','',0,new Date(),actor,
+      'Attempt '+attemptId,attemptId,'','']);
+    ecLog_(ledger.audit,actor,'APPROVED',key,JSON.stringify({id:attemptId}));
     return 'Diluluskan: '+key;
   });
 }
-/** Generate one QA PDF. Persist GENERATING before any Drive operation; no automatic retry. */
+/** Phase 3 durable generation. Requires Reliability.gs and a bound QA project. */
 function ecGenerateQa(receipt) {
-  const cfg=ecConfig_(),actor=ecOperator_(cfg);
-  return ecLock_(() => {
-    const ledger=ecLedger_(cfg),snapshot=ecRead_(cfg,ledger),key=ecKey_(receipt);
-    const match=snapshot.rows.filter(r => r.receipt===key);
-    if (match.length!==1 || match[0].eligibility!=='ELIGIBLE')
-      throw new Error('Kelayakan tidak sah.');
-    const p=match[0];
-    ecAssertClosed_(ledger,snapshot,p.batch);
-    const record=ecIssue_(ledger.issue,key);
-    if (!record || record.row[3]!=='APPROVED') throw new Error('Status APPROVED diperlukan.');
-    if (ecKey_(record.row[1]) !== p.certificate || Number(record.row[2]) !== p.batch ||
-        ecRows_(ledger.issue).filter(row => ecKey_(row[1]) === p.certificate).length !== 1)
-      throw new Error('Identiti atau nombor sijil ledger bercanggah.');
-    ecUpdateIssue_(ledger.issue,record,actor,'GENERATING',null,'QA Drive operation reserved');
-    ecLog_(ledger.audit,actor,'GENERATING',key,'QA');
-    try {
-      const folder=DriveApp.getFolderById(cfg.folderId);
-      const slideFile=DriveApp.getFileById(cfg.templateId)
-        .makeCopy('QA-SLIDES-'+p.certificate,folder);
-      ecLog_(ledger.audit,actor,'SLIDES_CREATED',key,slideFile.getId());
-      if (PropertiesService.getScriptProperties().getProperty('EC_PHASE2_FAIL_AFTER_COPY') === 'true')
-        throw new Error('QA injected failure after Slides copy, before PDF.');
-      const presentation=SlidesApp.openById(slideFile.getId());
-      const tags=[
-        ['<<Nama_Peserta>>',p.name],
-        ['<<Batch>>','Batch '+p.batch+' — QA'],
-        ['<<No_Sijil>>',p.certificate]
-      ];
-      tags.forEach(([tag,value]) => {
-        if (presentation.replaceAllText(tag,value)<1)
-          throw new Error('Tag template tiada: '+tag);
-      });
-      const first=presentation.getSlides()[0];
-      if (!first) throw new Error('Template tiada slide.');
-      if (presentation.getSlides().length !== 1) throw new Error('QA expects one certificate page.');
-      const content = presentation.getSlides().map(slide => slide.getShapes()
-        .map(shape => shape.getText().asString()).join('\n')).join('\n');
-      if (/<<[^>]+>>/.test(content) || tags.some(pair => !content.includes(pair[1])))
-        throw new Error('Placeholder verification failed.');
-      const mark=first.insertTextBox('UJIAN SAHAJA — TIDAK SAH',25,10,presentation.getPageWidth()-50,35);
-      mark.getFill().setSolidFill('#FFFFFF');
-      mark.getText().getTextStyle().setForegroundColor('#B00020')
-        .setFontSize(18).setBold(true);
-      presentation.saveAndClose();
-      const blob=DriveApp.getFileById(slideFile.getId()).getAs(MimeType.PDF)
-        .setName('QA-'+p.certificate+'.pdf');
-      const pdf=folder.createFile(blob);
-      const latest=ecIssue_(ledger.issue,key);
-      ecUpdateIssue_(ledger.issue,latest,actor,'GENERATED',
-        {4:pdf.getId(),5:pdf.getUrl()},'PDF generated; no email');
-      ecLog_(ledger.audit,actor,'GENERATED',key,'QA PDF '+pdf.getId());
-      return {status:'GENERATED',pdfId:pdf.getId(),pdfUrl:pdf.getUrl()};
-    } catch(err) {
-      // Partial Drive writes may exist. No retry until a human reconciles.
-      const latest=ecIssue_(ledger.issue,key);
-      ecUpdateIssue_(ledger.issue,latest,actor,'REVIEW_REQUIRED',null,'Partial Drive output possible');
-      ecLog_(ledger.audit,actor,'GENERATION_REVIEW_REQUIRED',key,'Manual reconciliation required');
-      throw err;
-    }
-  });
+  return ecReliableGenerate_(receipt);
 }
 /** Phase 2 execution-level interlock. No MailApp invocation is present. */
 function ecSendQa(receipt) {

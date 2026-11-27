@@ -1,5 +1,11 @@
 # Generasi Sunnah 2026 — Native eCERT (staging sahaja)
 
+**Phase 3 development checkpoint — isolated QA, production HOLD.**
+
+See [Phase 3 reliability evidence and procedure](PHASE3_RELIABILITY_QA_2026-11-27.md). Reliability.gs adds permanent Attempt_ID reservations, project binding, read-only reconciliation and a separately authorised link-existing-PDF operation. Phase3_QA.gs uses fresh fictional identities and resources. The Phase 3 schema adds Attempt_ID, Slides_ID and PDF_SHA256 columns and requires a fresh ledger.
+
+Run offline regression tests with `node staging/native-ecert/test-reliability.js`. Google results must be read separately from mocked tests. Phase 2 evidence below is retained as historical proof from its own project.
+
 **Checkpoint Phase 2, 27 November 2026 19:40 MYT — integrasi Google QA terasing PASS untuk senario yang diuji. Production HOLD.**
 
 Baca [matriks Phase 2](PHASE2_GOOGLE_QA_2026-11-27.md) untuk bukti dan batasan terkini. Bahagian asal di bawah dikekalkan sebagai sejarah pembangunan.
