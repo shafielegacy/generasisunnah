@@ -4,6 +4,7 @@ const root=path.resolve(__dirname,'..');
 const gs=fs.readFileSync(path.join(root,'gas/Code.gs'),'utf8');
 const ui=fs.readFileSync(path.join(root,'js/checkin.js'),'utf8');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const v2=fs.readFileSync(path.join(root,'assets/gs-v2.js'),'utf8'); // Premium UI V2 (LIVE) frontend
 new vm.Script(gs);new vm.Script(ui);
 const ctx={Date,console,qaDay:'2026-11-27',qaOpened:true,qaReceived:''};
 vm.createContext(ctx);
@@ -26,11 +27,11 @@ test('staff write date guard',()=>{set('2026-11-27');assert.throws(()=>ctx.gsReq
 test('staff session dropdown always has a valid default outside event dates',()=>{assert(ui.includes('sel.value=current||sessions[0][0]'));assert(!ui.includes('sel.value=current;'));});
 test('successful staff snapshot clears stale session error',()=>{assert(ui.includes("if($('gsStaffMessage').classList.contains('error'))message('gsStaffMessage','');"));});
 test('frontend no QR code dependence',()=>{assert(!ui.includes('hasQR'));assert(!ui.includes('qrCode'));assert(ui.includes("api('gsSelfCheckin',{receipt,last4})"));});
-test('GitHub homepage retained',()=>{assert(!index.includes('location.replace(dest.href)'));assert(index.includes('id="gsNativeApp"'));});
+test('GitHub homepage retained (V2: check-in form lives on the homepage, never redirects to /exec)',()=>{assert(!index.includes('location.replace(dest.href)'));assert(!v2.includes('location.replace'));assert(index.includes('id="checkinForm"'));assert(index.includes('./assets/gs-v2.js'));});
 test('direct CORS transport: no no-cors, no JSONP polling, no cookies',()=>{assert(!ui.includes("no-cors"));assert(!ui.includes('view=rpc'));assert(!ui.includes("createElement('script')"));assert(ui.includes("mode:'cors'"));assert(ui.includes("credentials:'omit'"));});
 test('no automatic retry loop around POST',()=>{assert.equal((ui.match(/await fetch\(/g)||[]).length,1);assert(!/for\s*\(let n=0;n<16/.test(ui));});
 test('success shown only on backend ok===true',()=>{assert(ui.includes("if(!d||d.ok!==true)throw new GsUncertain"));assert(ui.includes("showOutcome('SUCCESS'"));});
-test('quota uses CORS fetch, never executes remote script',()=>{assert(index.includes("?view=quota&_='+Date.now(),{mode:'cors',credentials:'omit'"));assert(!index.includes("el.src=GS_WEBAPP_URL+'?view=quota"));});
+test('quota uses CORS fetch, never executes remote script (V2)',()=>{assert(v2.includes("fetch(BASE + '?view=quota&_=' + Date.now(), { mode: 'cors', credentials: 'omit'"));assert(!/createElement\('script'\)/.test(v2));assert(!index.includes("el.src=GS_WEBAPP_URL+'?view=quota"));});
 test('write path re-checks date INSIDE the lock (forged request, flag open, 27 Nov)',()=>{
   const c2={Date,console,released:0,opened:0};vm.createContext(c2);vm.runInContext(gs,c2);
   vm.runInContext("LockService={getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{globalThis.released++;}})};SpreadsheetApp={openById:()=>{globalThis.opened++;throw new Error('MUST NOT OPEN SHEET');}};gsDay_=()=>'2026-11-27';gsOpen_=()=>true;",c2);
@@ -75,5 +76,5 @@ test('gsSelfCheckinStatus is read-only and requires matching phone',()=>{
   assert.equal(vm.runInContext('rows.length',c),1);});
 test('gsSelfCheckinStatus rejects outside event dates',()=>{
   const c=freshGas(sheetMock+"gsDay_=()=>'2026-11-27';");assert.equal(post(c,'gsSelfCheckinStatus',[{receipt:'GS26_R0144',last4:'6789'}]).ok,false);});
-test('quota panel visible on mobile (not hidden by CSS)',()=>{assert(!/\.quota-panel[^{]*\{display:none/.test(index));});
+test('quota panel visible on mobile (not hidden by CSS)',()=>{assert(!/\.quota-panel[^{]*\{display:none/.test(index));assert(!/\.quota-grid[^{]*\{display:none/.test(fs.readFileSync(path.join(root,'assets/gs-v2.css'),'utf8')));});
 console.log(n+' offline QA tests passed; NO GOOGLE CALLS.');
