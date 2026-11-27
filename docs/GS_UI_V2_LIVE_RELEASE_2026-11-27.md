@@ -100,3 +100,12 @@ Integrasi meliputi: format request, semua hasil (BERJAYA, SUDAH, GAGAL, TIDAK DI
 - **UAT esok:** cari **PESERTA DUMMY CHECK-IN GS26** mengikut nama dalam `Daftar GS`, salin resit terkini (snapshot `R0147`) dan sahkan 4 digit telefon `6789`. Gunakan portal LIVE pada tarikh 28 Nov, verify satu baris `b1d1`, kemudian satu cubaan pendua tanpa baris tambahan.
 - **Backup:** catat nama/resit/sesi/masa atas kertas sekiranya network, frontend atau GAS bermasalah. UNKNOWN → semak status Sheets terlebih dahulu, jangan terus cuba menulis lagi.
 - Frontend Premium UI V2 kekal LIVE. **Production freeze** sehingga UAT; eCERT production HOLD. Rujuk [Project History checkpoint 10](GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md).
+
+
+## Addendum UAT LIVE — 28 November 2026 selepas tengah malam
+
+**PASS WITH LIMITATIONS untuk `b1d1`:** Premium UI V2 dan GAS Version 7 telah berjaya digunakan pada tarikh sebenar untuk self-check-in, check-in Urusetia, carian nama dan bacaan semula dashboard daripada `KEHADIRAN_GS`. Dummy menggunakan resit `R0147`; rekod QR pertama telah dipadam secara manual oleh operator sebelum menguji penulisan Urusetia, maka kedua-dua penulisan ialah ujian berurutan. Cubaan resit salah `R0157` ditolak; resit betul selepas hadir memaparkan `SUDAH DIREKOD`. Rekod akhir yang dilihat ialah satu baris kehadiran dan dashboard selepas refresh menunjukkan 68 berdaftar / 1 hadir / 67 belum hadir.
+
+**Penemuan UX:** selepas Urusetia menanda `HADIR`, sistem memang memberikan toast berjaya, tetapi ia muncul di bawah halaman panjang dan kurang ketara. Cadangan selepas program: modal kejayaan berpusat dengan nama, resit, sesi dan status; kekalkan dedupe, no auto-retry dan respon backend sebagai sumber kebenaran. **Belum dilaksanakan.**
+
+**Operation:** owner telah menutup kaunter selepas UAT malam. Buka semula `b1d1` hanya apabila kaunter pagi sudah bersedia. **Production freeze** (tiada ubah GAS, frontend, Sheets atau AutoCrat). UAT sesi lain dan concurrency sebenar masih pending; eCERT production HOLD. Rujuk [sejarah checkpoint 11](GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md).
