@@ -1,0 +1,31 @@
+name: GS26 bridge isolated QA
+on:
+  push:
+    branches:
+      - staging/checkin-reliable-api-bridge-20261127
+    paths:
+      - 'staging/api-bridge/**'
+      - 'js/checkin.js'
+      - 'gas/Code.gs'
+      - 'tests/checkin-date-gate.test.js'
+      - '.github/workflows/bridge-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: JS syntax
+        run: |
+          node --check js/checkin.js
+          cp gas/Code.gs /tmp/gs26-backend.js
+          node --check /tmp/gs26-backend.js
+          node --check staging/api-bridge/worker.mjs
+          node --check staging/api-bridge/test-worker.cjs
+      - name: Date gate tests
+        run: node tests/checkin-date-gate.test.js
+      - name: API bridge tests
+        run: node staging/api-bridge/test-worker.cjs
