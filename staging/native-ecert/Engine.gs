@@ -4,12 +4,13 @@
  * Standalone, editor-run Apps Script. Do not deploy as web app or install triggers.
  * Source roster and check-in sheets are strictly READ-ONLY.
  * All writes go to a DIFFERENT QA ledger workbook and QA Drive folder.
- * The official AutoCrat job, original Slides template and GAS V6 are untouched.
+ * The official AutoCrat job, original Slides template and GAS V7 are untouched.
  *
  * Requires Eligibility.gs in the SAME standalone Apps Script project.
  */
 const EC_OFFICIAL_SOURCE_ID_ = '1YOlKCIfBd6FNJji6p4SjQtuBQOqr3zVFbtC2Nj1mwvc';
 const EC_OFFICIAL_TEMPLATE_ID_ = '1tFY8IqyXKdUloW8bSnp1Z1TNmvN6ojHFyqMmgvY_6gU';
+const EC_OFFICIAL_FOLDER_ID_ = '17IuUvq4NkLAM7f78Lg6L6JaXh44KCNjj';
 const EC_LEDGER_HEADERS_ = ['No_Resit','No_Sijil','Batch','Status','PDF_ID','PDF_URL',
   'Attempts','Updated_At','Updated_By','Note'];
 const EC_AUDIT_HEADERS_ = ['Waktu','Operator','Tindakan','No_Resit','Butiran'];
@@ -27,15 +28,17 @@ function ecConfig_() {
     operators: (p.getProperty('EC_QA_ALLOWED_OPERATORS') || '').toLowerCase().split(',')
       .map(x => x.trim()).filter(Boolean),
     recipient: (p.getProperty('EC_QA_EMAIL') || '').trim().toLowerCase(),
-    sendEnabled: p.getProperty('EC_QA_SEND_ENABLED') === 'true',
+    sendEnabled: false,
     simulatedNow: p.getProperty('EC_QA_NOW') || ''
   };
+  if (p.getProperty('EC_QA_SEND_ENABLED') === 'true')
+    throw new Error('Phase 2 email disabled; set EC_QA_SEND_ENABLED=false.');
   const idPattern = /^[a-zA-Z0-9_-]{20,}$/;
   if (![cfg.sourceId,cfg.ledgerId,cfg.templateId,cfg.folderId].every(x => idPattern.test(x)))
     throw new Error('Konfigurasi ID QA tidak lengkap.');
-  if (new Set([cfg.sourceId,cfg.ledgerId,cfg.templateId,cfg.folderId]).size !== 4 ||
-      cfg.sourceId === EC_OFFICIAL_SOURCE_ID_ || cfg.ledgerId === EC_OFFICIAL_SOURCE_ID_ ||
-      cfg.templateId === EC_OFFICIAL_TEMPLATE_ID_)
+  const resources = [cfg.sourceId,cfg.ledgerId,cfg.templateId,cfg.folderId];
+  const official = [EC_OFFICIAL_SOURCE_ID_,EC_OFFICIAL_TEMPLATE_ID_,EC_OFFICIAL_FOLDER_ID_];
+  if (new Set(resources).size !== 4 || resources.some(id => official.includes(id)))
     throw new Error('QA mesti menggunakan sumber, ledger, template dan folder terasing.');
   if (!cfg.operators.length) throw new Error('Senarai operator QA kosong.');
   return cfg;
@@ -91,7 +94,12 @@ function ecRead_(cfg, ledger) {
   const people = roster.getDataRange().getDisplayValues();
   const checkins = attendance.getDataRange().getValues();
   const corrections = ledger.correction.getDataRange().getValues();
-  return ecEvaluate_(people,checkins,corrections);
+  const snapshot = ecEvaluate_(people,checkins,corrections);
+  if (snapshot.rows.some(row => !/^QA-[A-Z0-9_-]+$/.test(row.receipt) ||
+      !/^QA-[A-Z0-9_-]+$/.test(row.certificate) ||
+      !/^[^\s,;@<>]+@[^\s,;@<>]+\.invalid$/i.test(row.email)))
+    throw new Error('Phase 2 memerlukan resit/sijil QA dan e-mel domain .invalid.');
+  return snapshot;
 }
 function ecDigest_(obj) {
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(obj));
@@ -187,13 +195,18 @@ function ecCorrectQa(receipt,session,present,reason) {
   });
 }
 /** Close only after Day 2, with no review or orphan check-in for that batch. */
+function ecBatchEnded_(now,batch) {
+  if (![1,2].includes(batch)) throw new Error('Batch tidak sah.');
+  const lastDay = batch === 1 ? '2026-11-29' : '2026-12-06';
+  const today = ecMalaysiaDate_(now);
+  return !!today && today > lastDay;
+}
 function ecCloseBatchQa(batch) {
   const cfg=ecConfig_(),actor=ecOperator_(cfg);
   return ecLock_(() => {
     batch=Number(batch);
     if (![1,2].includes(batch)) throw new Error('Batch tidak sah.');
-    const lastDay=batch===1?'2026-11-29':'2026-12-06';
-    if (ecMalaysiaDate_(ecNow_(cfg)) < lastDay) throw new Error('Hari kedua belum selesai.');
+    if (!ecBatchEnded_(ecNow_(cfg),batch)) throw new Error('Hari kedua belum selesai.');
     const ledger=ecLedger_(cfg),snapshot=ecRead_(cfg,ledger);
     if (ecBatchRecord_(ledger.batch,batch)) throw new Error('Batch sudah ditutup.');
     if (!snapshot.rows.some(r => r.batch===batch)) throw new Error('Tiada peserta dalam batch QA.');
@@ -237,12 +250,18 @@ function ecGenerateQa(receipt) {
     ecAssertClosed_(ledger,snapshot,p.batch);
     const record=ecIssue_(ledger.issue,key);
     if (!record || record.row[3]!=='APPROVED') throw new Error('Status APPROVED diperlukan.');
+    if (ecKey_(record.row[1]) !== p.certificate || Number(record.row[2]) !== p.batch ||
+        ecRows_(ledger.issue).filter(row => ecKey_(row[1]) === p.certificate).length !== 1)
+      throw new Error('Identiti atau nombor sijil ledger bercanggah.');
     ecUpdateIssue_(ledger.issue,record,actor,'GENERATING',null,'QA Drive operation reserved');
     ecLog_(ledger.audit,actor,'GENERATING',key,'QA');
     try {
       const folder=DriveApp.getFolderById(cfg.folderId);
       const slideFile=DriveApp.getFileById(cfg.templateId)
         .makeCopy('QA-SLIDES-'+p.certificate,folder);
+      ecLog_(ledger.audit,actor,'SLIDES_CREATED',key,slideFile.getId());
+      if (PropertiesService.getScriptProperties().getProperty('EC_PHASE2_FAIL_AFTER_COPY') === 'true')
+        throw new Error('QA injected failure after Slides copy, before PDF.');
       const presentation=SlidesApp.openById(slideFile.getId());
       const tags=[
         ['<<Nama_Peserta>>',p.name],
@@ -255,7 +274,13 @@ function ecGenerateQa(receipt) {
       });
       const first=presentation.getSlides()[0];
       if (!first) throw new Error('Template tiada slide.');
-      const mark=first.insertTextBox('UJIAN SAHAJA — TIDAK SAH',25,10,650,35);
+      if (presentation.getSlides().length !== 1) throw new Error('QA expects one certificate page.');
+      const content = presentation.getSlides().map(slide => slide.getShapes()
+        .map(shape => shape.getText().asString()).join('\n')).join('\n');
+      if (/<<[^>]+>>/.test(content) || tags.some(pair => !content.includes(pair[1])))
+        throw new Error('Placeholder verification failed.');
+      const mark=first.insertTextBox('UJIAN SAHAJA — TIDAK SAH',25,10,presentation.getPageWidth()-50,35);
+      mark.getFill().setSolidFill('#FFFFFF');
       mark.getText().getTextStyle().setForegroundColor('#B00020')
         .setFontSize(18).setBold(true);
       presentation.saveAndClose();
@@ -276,53 +301,9 @@ function ecGenerateQa(receipt) {
     }
   });
 }
-/**
- * ONE REAL QA EMAIL MAXIMUM PER SCRIPT PROJECT.
- * Reserve the global send marker BEFORE MailApp. Unknown outcomes never auto-retry.
- */
+/** Phase 2 execution-level interlock. No MailApp invocation is present. */
 function ecSendQa(receipt) {
-  const cfg=ecConfig_(),actor=ecOperator_(cfg);
-  return ecLock_(() => {
-    if (!cfg.sendEnabled || !ecValidEmail_(cfg.recipient))
-      throw new Error('QA email disabled / recipient invalid.');
-    const props=PropertiesService.getScriptProperties();
-    if (props.getProperty('EC_QA_SEND_STATE'))
-      throw new Error('Ujian penghantaran telah digunakan atau status tidak pasti.');
-    const ledger=ecLedger_(cfg),snapshot=ecRead_(cfg,ledger),key=ecKey_(receipt);
-    const matches=snapshot.rows.filter(r=>r.receipt===key);
-    if (matches.length!==1 || matches[0].eligibility!=='ELIGIBLE')
-      throw new Error('Peserta tidak layak.');
-    ecAssertClosed_(ledger,snapshot,matches[0].batch);
-    const record=ecIssue_(ledger.issue,key);
-    if (!record || record.row[3]!=='GENERATED' || !record.row[4] || Number(record.row[6])!==0)
-      throw new Error('Sijil belum GENERATED atau pernah cuba dihantar.');
-    if (MailApp.getRemainingDailyQuota()<1) throw new Error('Kuota MailApp tidak mencukupi.');
-    const attachment=DriveApp.getFileById(String(record.row[4])).getBlob();
-    // Reserve both markers before the external send. Even a thrown error may mean accepted.
-    props.setProperty('EC_QA_SEND_STATE','RESERVED');
-    ecUpdateIssue_(ledger.issue,record,actor,'SEND_UNKNOWN',{6:1},'Send attempt reserved');
-    ecLog_(ledger.audit,actor,'SEND_RESERVED',key,'QA only');
-    try {
-      MailApp.sendEmail({
-        to:cfg.recipient,
-        subject:'[UJIAN SAHAJA] eCERT Generasi Sunnah 2026 — QA',
-        body:'Assalamualaikum,\n\nIni ialah e-mel ujian sistem sijil digital Generasi Sunnah 2026.\n\n'
-          +'Dilampirkan sijil PDF menggunakan data peserta rekaan. Sijil ini bukan dokumen rasmi.\n\n'
-          +'Terima kasih.\nUrusetia Generasi Sunnah 2026',
-        attachments:[attachment],
-        name:'Urusetia Generasi Sunnah 2026'
-      });
-      props.setProperty('EC_QA_SEND_STATE','SENT');
-      const latest=ecIssue_(ledger.issue,key);
-      ecUpdateIssue_(ledger.issue,latest,actor,'SENT',null,'MailApp accepted; inbox confirmation separate');
-      ecLog_(ledger.audit,actor,'SENT',key,'MailApp accepted');
-      return 'MailApp accepted one QA email';
-    } catch(err) {
-      // Deliberately do not release reservation, even if sendEmail throws.
-      ecLog_(ledger.audit,actor,'SEND_UNKNOWN',key,'Do not retry automatically');
-      throw new Error('Status penghantaran tidak pasti; jangan hantar semula.');
-    }
-  });
+  throw new Error('Phase 2 email disabled. Tiada penghantaran dibenarkan.');
 }
 /** Reconcile a confirmed delivery; does not send any email. */
 function ecConfirmReceivedQa(receipt,evidence) {

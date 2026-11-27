@@ -1,6 +1,16 @@
 # Generasi Sunnah 2026 — Native eCERT (staging sahaja)
 
-**Status 27 November 2026: DEVELOPMENT / PRODUCTION HOLD.**
+**Checkpoint Phase 2, 27 November 2026 19:40 MYT — integrasi Google QA terasing PASS untuk senario yang diuji. Production HOLD.**
+
+Baca [matriks Phase 2](PHASE2_GOOGLE_QA_2026-11-27.md) untuk bukti dan batasan terkini. Bahagian asal di bawah dikekalkan sebagai sejarah pembangunan.
+
+Dalam branch Phase 2 ini, `ecSendQa()` sentiasa menolak panggilan. Enjin tidak mempunyai panggilan MailApp. Konfigurasi `EC_QA_SEND_ENABLED=true` ditolak. Kelayakan hanya menerima identiti resit/sijil berawalan QA dan e-mel domain `.invalid`. Penutupan batch dibenarkan mulai 00:00 MYT pada hari selepas Hari 2, kerana masa tamat program belum dikonfigurasi.
+
+`Integration_QA.gs` menyediakan fungsi editor `phase2Prepare`, `phase2Inspect`, `phase2Verify` dan `phase2SecurityChecks`. Gunakan projek standalone baharu. `phase2Prepare` membina sumber rekaan, ledger, salinan template dan folder khusus. `phase2Verify` mempunyai penanda sekali jalan. Semak audit sebelum sebarang pemulihan jika execution terhenti.
+
+Kod sebenar Google QA dipasang sebagai gabungan empat fail mengikut urutan Integration_QA, Eligibility, Engine, QA_Runner dalam Code.gs. Simpan ID konfigurasi dan identiti operator di Script Properties. Log projek Google menyimpan rujukan sebenar kepada sumber QA.
+
+Ujian tambahan offline boleh dijalankan dengan `node staging/native-ecert/test-phase2.js`. Ujian Google menguji Sheets/Slides/Drive sebenar. UNKNOWN diuji sebagai keadaan ledger rekaan dengan penghantaran dimatikan.
 
 Modul ini disediakan supaya kerja pembangunan boleh diteruskan tanpa menggunakan ChatGPT Work. Ia **bukan** backend GAS V6 production, tidak di-deploy dan tidak disambungkan kepada spreadsheet rasmi.
 
