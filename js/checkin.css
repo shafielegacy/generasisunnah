@@ -26,3 +26,4 @@
 /* Clear notice before venue QR/session is active */
 .gs-notice{background:#fff7e6;border:1px solid #ead49b;border-left:4px solid #ca9c38;border-radius:11px;color:#78551c;padding:14px 16px;font-size:13px;line-height:1.6;margin:11px 0 18px}
 .gs-notice.gs-notice-open{background:#eaf7ee;border-color:#badcc5;border-left-color:#2c8d62;color:#24583d}
+.gs-msg.ok{background:#dff2e6;color:#14502f;font-weight:700;border:1px solid #9fd1b0}
