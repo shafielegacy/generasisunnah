@@ -36,7 +36,7 @@ await test('reject wrong Content-Type',async()=>{
 });
 globalThis.fetch=async(url,init)=>{
  captured={url,init};count+=0;
- return Object.assign(okUpstream(),{url:'https://script.googleusercontent.com/macros/echo?user_content_key=qa'});
+ return Object.defineProperty(okUpstream(),'url',{value:'https://script.googleusercontent.com/macros/echo?user_content_key=qa'});
 };
 await test('readable one-POST response',async()=>{
  const r=await invoke();assert.equal(r.status,200);
@@ -49,7 +49,7 @@ await test('readable one-POST response',async()=>{
 });
 await test('preserve backend rejection without retry',async()=>{
  let calls=0;
- globalThis.fetch=async()=>{calls++;return Object.assign(new Response(JSON.stringify({ok:false,error:'Tarikh belum tiba'}),{status:200}),{url:'https://script.googleusercontent.com/macros/echo'});};
+ globalThis.fetch=async()=>{calls++;return Object.defineProperty(new Response(JSON.stringify({ok:false,error:'Tarikh belum tiba'}),{status:200}),'url',{value:'https://script.googleusercontent.com/macros/echo'});};
  const r=await invoke('POST',{action:'gsSelfCheckin',args:[{receipt:'GS26_R0144',last4:'6789'}]});
  assert.equal((await r.json()).error,'Tarikh belum tiba');assert.equal(calls,1);
 });
@@ -60,7 +60,7 @@ await test('network timeout does NOT retry write',async()=>{
  assert.equal(r.status,504);assert.equal(calls,1);
 });
 await test('redirect to untrusted host rejected',async()=>{
- globalThis.fetch=async()=>Object.assign(okUpstream(),{url:'https://evil.test/'});
+ globalThis.fetch=async()=>Object.defineProperty(okUpstream(),'url',{value:'https://evil.test/'});
  const r=await invoke();assert.equal(r.status,502);
 });
 await test('missing config blocked',async()=>{
