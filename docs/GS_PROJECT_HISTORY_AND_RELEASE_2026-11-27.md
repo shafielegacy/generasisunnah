@@ -177,3 +177,21 @@ Lihat [rekod LIVE UI V2](GS_UI_V2_LIVE_RELEASE_2026-11-27.md) untuk bukti ujian 
 - Native eCERT Phase 3 QA kekal pada [Draft PR #8](https://github.com/shafielegacy/generasisunnah/pull/8); production eCERT **HOLD**.
 
 **Release gate akhir 27 Nov:** UI V2 LIVE = PASS; GAS V7 rollback = PASS; dummy pre-date QA write = **NOT COMPLETED**; check-in E2E pada hari program = **PENDING**; eCERT production = **HOLD**.
+
+
+## 11. Milestone UAT LIVE 28 November 2026 — Batch 1 Hari 1
+
+**Status: PASS WITH LIMITATIONS**, disahkan owner melalui screenshot portal dan rekod kehadiran Google Sheets production.
+
+- Pada 28 November selepas tengah malam, UI memaparkan check-in dibuka untuk `b1d1`; backend kekal Google Apps Script Version 7, portal Premium UI V2.
+- Self-check-in peserta dummy menggunakan resit `GS26_R0147` berjaya dan rekod sesi `b1d1` masuk ke `KEHADIRAN_GS` melalui kaedah `QR PESERTA` pada 00:00:50 MYT.
+- Owner memadam baris dummy ujian pertama sebelum ujian kedua melalui Urusetia. Modal pengesahan `Tandakan HADIR?` berfungsi dan rekod baharu masuk melalui kaedah `URUS SETIA` pada 00:02:35 MYT. **Ini ujian berurutan, bukan dua penulisan serentak.**
+- Carian nama peserta di dashboard Urusetia berjaya, dan selepas muat semula owner mengesahkan 68 berdaftar, 1 hadir, 67 belum hadir; peserta dummy berstatus `HADIR`.
+- Percubaan menggunakan resit salah `R0157` ditolak dengan betul. Percubaan dengan resit tepat selepas hadir menghasilkan paparan `SUDAH DIREKOD`. Semakan Sheets menunjukkan satu rekod bagi resit dummy dan sesi yang diuji. Tiada ujian concurrency sebenar.
+- **UX backlog:** notifikasi berjaya untuk Urusetia berupa toast di bahagian bawah skrin, kurang jelas. Cadangkan modal kejayaan berpusat selepas program, tanpa mengubah API atau auto-retry.
+- **Risk backlog:** formula resit bergantung kedudukan baris; reka identifier stabil selepas program dengan audit rekod sedia ada.
+- **Operational close:** owner telah menutup suis check-in `b1d1` selepas UAT tengah malam. Pada pagi 28 Nov, urusetia perlu membuka semula apabila kaunter bersedia; refresh dashboard dan semak rekod. Jangan padam rekod QA lagi.
+- **Production freeze:** tiada perubahan kod, GAS deployment, Sheets formula/schema, QR atau AutoCrat. Native eCERT masih HOLD.
+- **Belum disahkan:** UAT hari kedua, Batch 2, simultaneous write/concurrency serta semua kes network failure.
+
+**Keputusan akhir:** fungsi asas QR dan Urusetia LIVE telah melepasi UAT sesi `b1d1` dengan batasan di atas. Rekod sejarah pra-UAT dalam seksyen sebelumnya kekal sebagai snapshot pada waktunya.
