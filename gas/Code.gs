@@ -193,7 +193,7 @@ function gsSession_(key) {
 function gsProperties_(){return PropertiesService.getScriptProperties();}
 // New namespace: first deployment of manual control starts CLOSED.
 function gsOpen_(key){
-  return gsProperties_().getProperty('GS_OPEN_MANUAL_'+key)==='true' && /^[A-F0-9]{12}$/.test(gsCode_(key));
+  return gsProperties_().getProperty('GS_OPEN_MANUAL_'+key)==='true';
 }
 function gsCode_(key){return gsProperties_().getProperty('GS_CODE_MANUAL_'+key)||'';}
 function gsHash_(str){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(str)).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');}
@@ -203,10 +203,18 @@ function gsSafeEqual_(a,b){
   return diff===0;
 }
 function gsPublicSession_(s){return {key:s.key,label:s.label,date:s.date,open:gsOpen_(s.key)};}
-function gsPublicStatus(){return {sessions:GS_CFG_.sessions.map(gsPublicSession_),today:gsDay_(),manualControl:true};}
+function gsPublicStatus(){return {sessions:GS_CFG_.sessions.map(gsPublicSession_),today:gsDay_(),manualControl:true,simpleCheckin:true};}
+/** Source-of-truth guard. Even if staff opened early, no attendance before the event date. */
+function gsTodaySession_(){
+  const today=gsDay_();
+  const s=GS_CFG_.sessions.find(x=>x.date===today);
+  if(!s)throw new Error('Check-in belum bermula atau tarikh program sudah tamat. Sila hadir pada tarikh batch yang ditetapkan.');
+  return s;
+}
 function gsRequireEvent_(session){
   const s=gsSession_(session);
-  if(!gsOpen_(s.key)) throw new Error('Check-in untuk sesi ini belum dibuka atau sudah ditutup.');
+  if(gsDay_()!==s.date)throw new Error('Check-in tidak dibenarkan di luar tarikh program: '+s.date+'.');
+  if(!gsOpen_(s.key))throw new Error('Check-in belum dibuka oleh urusetia.');
   return s;
 }
 function gsColumns_(head){
@@ -272,13 +280,14 @@ function gsRateLimit_(id){
 /** Public self-check-in; no names, contact details or roster are returned. */
 function gsSelfCheckin(data){
   if(!data || typeof data!=='object') throw new Error('Maklumat tidak lengkap.');
-  const s=gsRequireEvent_(data.session);
+  // Session is determined by Malaysia's date, NEVER by a browser query parameter.
+  // The printed QR Monkey poster points to the GitHub homepage only.
+  const s=gsTodaySession_();
+  gsRequireEvent_(s.key);
   const receipt=String(data.receipt||'').trim().toUpperCase();
   const last4=String(data.last4||'').trim();
-  const code=String(data.code||'').trim().toUpperCase();
-  if(!/^[A-Z0-9_-]{5,24}$/.test(receipt) || !/^\d{4}$/.test(last4) || !/^[A-F0-9]{12}$/.test(code))throw new Error('Maklumat tidak lengkap atau tidak sah.');
+  if(!/^GS26_R\d{4,}$/.test(receipt)||!/^\d{4}$/.test(last4))throw new Error('Nombor resit atau telefon tidak sah.');
   gsRateLimit_(receipt);
-  if(!gsSafeEqual_(code,gsCode_(s.key))) throw new Error('Kod lokasi tidak sah. Sila imbas QR terkini di tempat program.');
   const person=gsRoster_().find(x=>x.receipt===receipt&&x.batch===s.batch);
   if(!person || !person.phoneDigits.endsWith(last4))throw new Error('Maklumat tidak dapat disahkan. Semak nombor resit dan 4 digit terakhir telefon penjaga.');
   return gsWriteCheckin_(s.key,receipt,'QR PESERTA','PESERTA');
@@ -316,7 +325,7 @@ function gsStaffSnapshot(token,session,query){
   const tab=gsAttendance_(SpreadsheetApp.openById(GS_CFG_.spreadsheetId));
   const present=gsRecords_(tab,s.key);
   const matches=roster.filter(p=>(p.name+' '+p.receipt).toLowerCase().includes(q)).slice(0,GS_CFG_.maxSearchResults);
-  return {session:gsPublicSession_(s),total:roster.length,present:present.size,people:matches.map(p=>({name:p.name,receipt:p.receipt,present:present.has(p.receipt)})),venueCode:gsOpen_(s.key)?gsCode_(s.key):'',manualControl:true,webAppUrl:ScriptApp.getService().getUrl()||''};
+  return {session:gsPublicSession_(s),total:roster.length,present:present.size,people:matches.map(p=>({name:p.name,receipt:p.receipt,present:present.has(p.receipt)})),venueCode:'',manualControl:true,simpleCheckin:true,webAppUrl:ScriptApp.getService().getUrl()||''};
 }
 function gsStaffSetOpen(token,session,open,ackOutsideDate){
   gsStaff_(token);
@@ -324,18 +333,17 @@ function gsStaffSetOpen(token,session,open,ackOutsideDate){
   if(open!==true && open!==false)throw new Error('Status tidak sah.');
   // Explicit staff confirmation is required to OPEN outside the programme date.
   // Closing is always permitted; dates are checked in Malaysia time.
-  if(open===true && gsDay_()!==s.date && ackOutsideDate!==true)
-    throw new Error('Sahkan pembukaan di luar tarikh program terlebih dahulu.');
+  if(open===true && gsDay_()!==s.date)
+    throw new Error('Tidak boleh buka check-in sebelum atau selepas tarikh sesi program.');
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(15000))throw new Error('Sistem sedang sibuk.');
   try{
     const props=gsProperties_();
     if(open===true){
-      if(!gsOpen_(s.key))props.setProperty('GS_CODE_MANUAL_'+s.key,Utilities.getUuid().replace(/-/g,'').slice(0,12).toUpperCase());
       props.setProperty('GS_OPEN_MANUAL_'+s.key,'true');
     }else{
       props.setProperty('GS_OPEN_MANUAL_'+s.key,'false');
-      props.deleteProperty('GS_CODE_MANUAL_'+s.key); // Old QR becomes invalid.
+      // Location QR code is no longer used. Existing legacy property is not read.
     }
     return gsPublicSession_(s);
   }finally{lock.releaseLock();}
