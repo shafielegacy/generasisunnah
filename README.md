@@ -37,3 +37,20 @@
 📚 **[Sejarah Manual Check-in V5 (superseded)](docs/GS_MANUAL_CHECKIN_V5_2026-11-26.md)**
 
 **Deployment note:** GitHub menyimpan source `gas/Code.gs`; push GitHub **tidak** men-deploy Google Apps Script. Untuk rollback, pilih versi GAS lama pada *Manage deployments* bagi deployment **yang sama**, dan revert commit frontend jika perlu. Jangan bina deployment baharu atau ubah URL QR tanpa arahan owner.
+
+## Project handover & Native eCERT — 27 November 2026
+
+**Sambungan projek: baca dahulu sebelum arahkan Claude Pro atau ChatGPT Work.**
+
+- 📚 [Sejarah penuh projek, milestone, keputusan owner, status LIVE dan SOP ustaz](docs/GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md)
+- 🎓 [Audit sijil dan Native eCERT Email UAT 27 Nov](docs/GS_NATIVE_ECERT_UAT_2026-11-27.md)
+- 🛡️ [Audit check-in dan release V7](docs/AUDIT_CHECKIN_2026-11-27.md)
+
+**eCERT — bukti dan status:**
+- Simulator staging Python/SQLite: **37/37 offline tests PASS**; penghantaran mock **bukan** e-mel sebenar.
+- Pada **27 Nov 2026, 14:28 MYT**, satu **Native eCERT QA** berasaskan salinan Slides → PDF Drive → `MailApp.sendEmail` **berjaya**, dengan peserta rekaan `QA-GS26-001`, watermark `UJIAN SAHAJA — TIDAK SAH` dan pengesahan e-mel diterima oleh owner. AutoCrat tidak digunakan dalam ujian itu.
+- Branch `staging/ecert-gs26-review` menyimpan `staging/ecert/` dan `staging/native-ecert/`. **Bukan code eCERT production**; belum merge atau deploy ke GAS check-in V7.
+- **Production eCERT = HOLD.** Job AutoCrat `eCERT GS26` masih tidak mempunyai merge conditions; **jangan tekan Run** pada roster penuh, hidupkan trigger, hantar e-mel tambahan atau jana sijil rasmi sebelum kelayakan kehadiran dua hari, approval dan OWNER GO.
+- **Check-in E2E Sheets = PENDING** untuk 28 Nov; penolakan tarikh pada 27 Nov adalah PASS tetapi bukan bukti penulisan sah ke tab kehadiran.
+
+Bagi kerja sambungan, bezakan **QA berasaskan Google yang telah dibuat satu kali** daripada **simulator offline** dan **integrasi modul eCERT yang belum diuji**. Semua perubahan production memerlukan kelulusan baharu.
