@@ -7,10 +7,9 @@ if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(BASE
 const root=document.getElementById('gsNativeApp');
 if(!root)return;
 const $=id=>document.getElementById(id);
-const qs=new URLSearchParams(location.search), qrSession=qs.get('session')||'',qrCode=qs.get('code')||'';
-const hasQR=/^b[12]d[12]$/.test(qrSession)&&/^[a-fA-F0-9]{12}$/.test(qrCode);
+const qs=new URLSearchParams(location.search);
 const sessions=[['b1d1','Batch 1 · Hari 1 · 28 Nov'],['b1d2','Batch 1 · Hari 2 · 29 Nov'],['b2d1','Batch 2 · Hari 1 · 5 Dis'],['b2d2','Batch 2 · Hari 2 · 6 Dis']];
-let token='',today='',current=hasQR?qrSession:'b1d1',currentTab='peserta',pub=[],snapshot=null,submitting=false;
+let token='',today='',current='',currentTab='peserta',pub=[],snapshot=null,submitting=false,publicStatusLoaded=false;
 // GAS does not expose CORS response headers. POST the private payload without
 // exposing a response, then read the short-lived result by an unguessable ID.
 const callbacks=new Map();
@@ -55,17 +54,11 @@ async function api(action,...args){
 }
 function message(id,text,isError=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);}
 function make(tag,value,cssClass){const e=document.createElement(tag);e.textContent=value||'';if(cssClass)e.className=cssClass;return e;}
-function nativeUrl(mode){
- let url=BASE+'?mode='+encodeURIComponent(mode);
- if(mode==='peserta'&&hasQR)url+='&session='+encodeURIComponent(qrSession)+'&code='+encodeURIComponent(qrCode);
- return url;
-}
-function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',v!=='peserta');$('gsStaff').classList.toggle('gs-hidden',v!=='urusetia');root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===v));$('gsNativeAlt').href=nativeUrl(v);if(v==='urusetia'&&token)refreshStaff();}
+function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',v!=='peserta');$('gsStaff').classList.toggle('gs-hidden',v!=='urusetia');root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===v));if(v==='urusetia'&&token)refreshStaff();}
 function render(){
  root.innerHTML="<div class='gs-header'><h2>Mini Check-in</h2><span class='gs-head-note' id='gsState'>Check-in ditutup</span></div>"+
  "<div class='gs-tabs'><button data-tab='peserta' class='active'>◈ Peserta</button><button data-tab='urusetia'>▤ Urusetia</button></div>"+
- "<p class='gs-help'>Jika sambungan check-in bermasalah pada telefon, <a id='gsNativeAlt' target='_blank' rel='noopener noreferrer'>buka versi alternatif Google Apps Script</a>.</p>"+
- "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia terlebih dahulu.</div><p id='gsInstruction' class='gs-help'>Imbas QR rasmi di lokasi terlebih dahulu.</p>"+
+ "<section id='gsParticipant' class='gs-container'><h3>Daftar kehadiran</h3><div id='gsNotice' class='gs-notice' role='status' aria-live='polite'>Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia terlebih dahulu.</div><p id='gsInstruction' class='gs-help'>Masukkan nombor resit dan 4 digit terakhir telefon penjaga.</p>"+
  "<form id='gsPublicForm' autocomplete='off'><label class='gs-field' for='gsReceipt'>5 aksara terakhir nombor resit</label><input class='gs-input' required id='gsReceipt' maxlength='5' minlength='5' pattern='[Rr][0-9]{4}' autocapitalize='characters' autocomplete='off' placeholder='Contoh: R0049'><p class='gs-help'>Taip R0049 sahaja, tak perlu GS26_.</p>"+
  "<label class='gs-field' for='gsPhone'>4 digit terakhir telefon penjaga</label><input class='gs-input' required id='gsPhone' maxlength='4' pattern='[0-9]{4}' inputmode='numeric' autocomplete='off' placeholder='••••'>"+
  "<button class='gs-button wide' id='gsSubmit' disabled>Sahkan kehadiran</button></form><div id='gsPublicMessage' class='gs-msg'></div><p class='gs-help'>Kalau tiada resit, minta urusetia bantu check-in.</p></section>"+
@@ -86,34 +79,44 @@ function render(){
  $('gsRefresh').addEventListener('click',refreshStaff);$('gsToggle').addEventListener('click',toggle);
  let debounce; $('gsSearch').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(refreshStaff,300);});
  $('gsPrint').addEventListener('click',printQR);
- $('gsNativeAlt').href=nativeUrl('peserta');
  if(qs.get('mode')==='urusetia')setTab('urusetia');
  updatePublic();
 }
 function updatePublic(){
  const s=pub.find(x=>x.key===current),open=!!s?.open;
- const anyOpen=pub.some(s=>s.open);
- $('gsState').textContent=anyOpen?'✓ Sesi check-in tersedia':'Check-in belum dibuka';
- $('gsInstruction').textContent=hasQR?'QR: '+(sessions.find(x=>x[0]===current)?.[1]||'Sesi'):'Imbas QR rasmi di lokasi program supaya sesi dipilih automatik.';
+ const eventToday=!!s&&s.date===today;
+ $('gsState').textContent=!publicStatusLoaded?'Status belum dapat disemak':!eventToday?'Di luar tarikh program':open?'✓ Check-in dibuka':'Check-in belum dibuka';
  const notice=$('gsNotice');
- notice.textContent=!anyOpen
-  ?'Kehadiran belum boleh disahkan. Sesi perlu dibuka oleh urusetia. Status DIBUKA di atas merujuk pendaftaran, bukan kehadiran.'
-  : !hasQR?'Sesi check-in tersedia. Sila imbas QR rasmi di lokasi program untuk mengesahkan kehadiran.'
-  : !open?'QR ini tidak aktif atau sesi sudah ditutup. Minta QR terkini daripada urusetia.'
-  :'Sesi check-in dibuka. Masukkan kod resit pendek dan 4 digit telefon penjaga.';
- notice.classList.toggle('gs-notice-open',anyOpen&&open&&hasQR);
- $('gsSubmit').disabled=submitting||!hasQR||!open;
+ notice.textContent=!publicStatusLoaded
+  ?'Status sesi tidak dapat disemak. Cuba muat semula halaman.'
+  :!eventToday?'Check-in belum dibenarkan hari ini. Sila hadir pada tarikh program.'
+  :!open?'Sesi hari ini belum dibuka oleh urusetia.'
+  :'Sesi check-in dibuka. Masukkan resit dan 4 digit telefon penjaga.';
+ $('gsInstruction').textContent=eventToday&&s?'Sesi hari ini: '+s.label:'Sesi akan dipilih secara automatik pada hari program.';
+ notice.classList.toggle('gs-notice-open',publicStatusLoaded&&eventToday&&open);
+ $('gsSubmit').disabled=submitting||!publicStatusLoaded||!eventToday||!open;
 }
-async function refreshPublic(){try{const d=await api('gsPublicStatus');pub=d.sessions||[];today=d.today||'';updatePublic();}catch(err){message('gsPublicMessage',err.message,true);$('gsSubmit').disabled=true;}}
+async function refreshPublic(){
+ try{
+  const d=await api('gsPublicStatus');
+  if(!d||!Array.isArray(d.sessions)||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d.today||''))throw new Error('Status sesi tidak sah.');
+  pub=d.sessions;today=d.today;const active=pub.find(s=>s.date===today);
+  current=active?active.key:'';publicStatusLoaded=true;
+  message('gsPublicMessage','');updatePublic();
+ }catch(err){
+  publicStatusLoaded=false;current='';pub=[];
+  message('gsPublicMessage','Sambungan gagal: '+err.message,true);updatePublic();
+ }
+}
 async function selfCheckin(e){
- e.preventDefault();if(submitting||!hasQR)return;submitting=true;updatePublic();
+ e.preventDefault();if(submitting||!publicStatusLoaded||!current)return;submitting=true;updatePublic();
  message('gsPublicMessage','Menyimpan kehadiran…');
  try{
   const shortReceipt=$('gsReceipt').value.trim().toUpperCase();
   if(!/^R\d{4}$/.test(shortReceipt))throw new Error('Masukkan kod resit seperti R0049.');
   // All official 2026 receipts are GS26_R####, validated against the current roster.
   const fullReceipt='GS26_'+shortReceipt;
-  const d=await api('gsSelfCheckin',{session:current,code:qrCode.toUpperCase(),receipt:fullReceipt,last4:$('gsPhone').value});
+  const d=await api('gsSelfCheckin',{receipt:fullReceipt,last4:$('gsPhone').value});
   message('gsPublicMessage',d.message||'Kehadiran direkod.');$('gsReceipt').value='';$('gsPhone').value='';
  }
  catch(err){message('gsPublicMessage',err.message,true);}finally{submitting=false;updatePublic();}
@@ -136,13 +139,13 @@ async function refreshStaff(){
   const dateParts=String(d.session.date||'').split('-');
   const dateLabel=dateParts.length===3?`${Number(dateParts[2])} ${['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'][Number(dateParts[1])-1]||''} ${dateParts[0]}`.trim():'';
   $('gsOpenNotice').textContent=manualReady
-   ?'Urusetia boleh buka atau tutup check-in pada bila-bila masa. Pembukaan di luar tarikh program memerlukan pengesahan.'
+   ?'Check-in hanya dibenarkan pada tarikh sesi program. QR poster kekal dan membuka portal.'
    :d.session.date!==today&&dateLabel
      ?`Kawalan tarikh lama masih aktif. Check-in hanya boleh dibuka pada ${dateLabel} sehingga GAS dikemas kini.`
      :'Kawalan tarikh lama masih aktif. Kemas kini GAS untuk kawalan manual sepenuhnya.';
   const url='https://shafielegacy.github.io/generasisunnah/?mode=peserta&session='+encodeURIComponent(k)+'&code='+encodeURIComponent(d.venueCode||'')+'#gsNativeApp';
-  $('gsQRBlock').classList.toggle('gs-hidden',!isOpen||!d.venueCode);
-  if(isOpen&&d.venueCode){$('gsQRLink').href=url;const box=$('gsQR');box.replaceChildren();if(typeof QRCode==='function')new QRCode(box,{text:url,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});else box.textContent='QR library tak dapat dimuatkan';}
+  $('gsQRBlock').classList.add('gs-hidden');
+
   $('gsPeople').replaceChildren();
   for(const p of d.people||[]){const row=make('div','','gs-row'),details=make('div');details.append(make('strong',p.name),make('small',p.receipt));const b=make('button',p.present?'✓ HADIR':'Tanda hadir','gs-button');b.disabled=p.present||!isOpen;b.type='button';
     b.addEventListener('click',async()=>{if(!confirm('Tandakan HADIR untuk '+p.name+'?'))return;b.disabled=true;try{const result=await api('gsStaffCheckin',token,k,p.receipt,$('gsOperator').value);message('gsStaffMessage',result.message);await refreshStaff();}catch(err){message('gsStaffMessage',err.message,true);b.disabled=false;}});row.append(details,b);$('gsPeople').append(row);}
@@ -154,24 +157,23 @@ async function toggle(){
  const s=snapshot.session,sessionKey=$('gsSession').value;
  if(sessionKey!==s.key)return;
  const next=!s.open,outsideDate=s.date!==today,manualReady=snapshot.manualControl===true;
- if(next&&outsideDate&&!manualReady)return;
+ if(next&&outsideDate)return;
  const question=next
-  ?outsideDate?`Tarikh program: ${s.label}. Anda pasti mahu BUKA check-in sekarang, di luar tarikh program?`:`Buka check-in untuk ${s.label}?`
+  ?`Buka check-in untuk ${s.label}?`
   :`Tutup check-in untuk ${s.label}? QR semasa akan dibatalkan.`;
  if(!confirm(question))return;
  $('gsToggle').disabled=true;
  try{
-  if(next&&outsideDate)await api('gsStaffSetOpen',token,sessionKey,true,true);
-  else await api('gsStaffSetOpen',token,sessionKey,next);
+  await api('gsStaffSetOpen',token,sessionKey,next);
   await refreshStaff();await refreshPublic();
  }catch(err){message('gsStaffMessage',err.message,true);}
- finally{if(token&&$('gsSession').value===sessionKey)$('gsToggle').disabled=!manualReady&&outsideDate;}
+ finally{if(token&&$('gsSession').value===sessionKey)$('gsToggle').disabled=!manualReady||(outsideDate&&!snapshot.session.open);}
 }
 async function logout(){const t=token;token='';snapshot=null;$('gsDashboard').classList.add('gs-hidden');$('gsLogin').classList.remove('gs-hidden');try{await api('gsStaffLogout',t);}catch(_){}}
 function printQR(){const e=$('gsQR').querySelector('canvas,img');if(!e)return;const url=e.tagName==='CANVAS'?e.toDataURL('image/png'):e.src;const w=window.open('','_blank');if(!w)return;const h=w.document.createElement('h1');h.textContent='Generasi Sunnah 2026';const image=w.document.createElement('img');image.src=url;image.style.width='360px';w.document.body.append(h,image);image.onload=()=>w.print();}
 // Always keep the participant and staff forms on GitHub Pages. Never redirect to /exec.
 render();
-if(hasQR)location.hash='gsNativeApp';
+if(qs.get('mode')!=='urusetia')requestAnimationFrame(()=>root.scrollIntoView({block:'start'}));
 refreshPublic();
 setInterval(()=>{if(currentTab==='urusetia'&&token)refreshStaff();else refreshPublic();},60000);
 })();
