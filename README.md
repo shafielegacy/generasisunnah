@@ -16,6 +16,7 @@
 | Pengesahan backend | Operator menguji `gsPublicStatus`: `simpleCheckin:true` |
 | GitHub Pages frontend | PR **#3** (direct CORS, date lock, QR tetap) merged, commit `1a741ee2` |
 | Hotfix Urusetia | PR **#4** (default sesi + bersih mesej ralat + cache-bust) merged, commit `36cdf251` |
+| **Premium UI V2 LIVE** | PR **#7** merged, commit `2148443`; frontend sahaja, GAS V7 tidak berubah. [Laporan pelepasan & rollback](docs/GS_UI_V2_LIVE_RELEASE_2026-11-27.md) |
 | Telefon | Pixel 10 dan ROG memaparkan kuota/Mini Check-in; login dan senarai urusetia disemak |
 | Ujian QR → backend pada 27 Nov | **PASS (penolakan tarikh)**: dummy `R0146`/`6789` dihantar dari telefon; backend membalas check-in belum bermula |
 | Telefon → tulis ke `KEHADIRAN_GS` | **PENDING**: belum diuji pada tarikh program; jangan isytihar end-to-end PASS |
