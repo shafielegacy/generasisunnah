@@ -18,7 +18,7 @@ test('Nov 29 Batch 1 Day 2',()=>{set('2026-11-29');assert.equal(check().ok,true)
 test('Dec 5 Batch 2 Day 1',()=>{set('2026-12-05');assert.equal(check('GS26_R0900').ok,true);assert.equal(ctx.qaReceived,'b2d1:GS26_R0900');});
 test('Dec 6 Batch 2 Day 2',()=>{set('2026-12-06');assert.equal(check('GS26_R0900').ok,true);assert.equal(ctx.qaReceived,'b2d2:GS26_R0900');});
 test('Nov 30 FAIL',()=>{set('2026-11-30');assert.throws(()=>check(),/belum bermula/);});
-test('wrong batch FAIL',()=>{set('2026-12-05');assert.throws(()=>check(),/batch/);});
+test('wrong batch FAIL',()=>{set('2026-12-05');assert.throws(()=>check(),/tidak dapat disahkan/);});
 test('closed session FAIL',()=>{set('2026-11-28',false);assert.throws(()=>check(),/belum dibuka/);});
 test('wrong phone FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_R0144','1111'),/tidak dapat disahkan/);});
 test('invalid receipt FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_X0144'),/tidak sah/);});
