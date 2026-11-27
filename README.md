@@ -19,6 +19,21 @@
 - **Rollback:** `rollback/pre-ui-v2-20261127` (`114eb7b`) atau revert merge `2148443` selepas semakan operator. PR #6 (demo) kekal Draft dan bukan production.
 - **eCERT:** Phase 2 Google QA **32 assertions PASS** (Draft [PR #5](https://github.com/shafielegacy/generasisunnah/pull/5)); Phase 3 **Google concurrency, post-PDF recovery dan Batch 2 PASS**, regresi **57/57**, [GitHub Actions akhir SUCCESS](https://github.com/shafielegacy/generasisunnah/actions/runs/46002351278) pada [Draft PR #8](https://github.com/shafielegacy/generasisunnah/pull/8). **Timeout semula jadi Apps Script NOT VERIFIED; production eCERT HOLD; email OFF; tiada merge/deploy.** [Laporan Phase 3 di branch QA](https://github.com/shafielegacy/generasisunnah/blob/staging/ecert-phase3-reliability/staging/native-ecert/PHASE3_RELIABILITY_QA_2026-11-27.md).
 
+## Checkpoint 27 Nov 2026, 22:46–22:55 MYT — Dummy LIVE QA dibatalkan, GAS V7 dipulihkan
+
+**CURRENT STATUS: Premium UI V2 LIVE; GAS production Version 7 RESTORED; check-in E2E write PENDING.** Ujian satu dummy awal telah dihentikan apabila nombor resit dalam roster berubah semasa pendaftaran baharu masuk.
+
+- **Temporary QA source:** `qa/r0146-one-dummy-uat-20261127`, commit `0562f48`, hanya pengecualian tarikh untuk `GS26_R0146` / `6789` / `b1d1` pada 27 Nov; ujian isolation **15/15 PASS offline**, regresi V7 **29/29 PASS offline**. **Branch tidak di-merge.**
+- **GAS Version 8** dideploy sementara pada **22:46 MYT**, deployment ID dan `/exec` asal kekal. Panggilan `gsSelfCheckinStatus` baca-sahaja membalas **`ok:false`, tidak dapat mengesahkan resit/telefon**; **tiada check-in write LIVE berjaya**.
+- Semakan rasmi `Daftar GS` kemudian mendapati **`GS26_R0146` kini milik peserta sebenar Batch 2**, manakala **dummy kini `GS26_R0147`** (telefon akhir `6789`). Punca berkait nombor resit berdasarkan formula/kedudukan baris; tidak bermaksud GAS terbukti rosak.
+- **ROLLBACK PASS:** owner mengembalikan deployment yang sama ke **Version 7 (27 Nov, 17:07)** dan mengesahkan melalui screenshot `Deployment successfully updated`. Editor `Code.gs` turut dipulihkan daripada `main` dan padanan hash **`34c3b9edec64` (389 baris)** PASS; `Checkin.html` kekal **`206c4cba4e5b` (91 baris)**.
+- Semakan `KEHADIRAN_GS` ketika diagnosis: **0 baris kehadiran**. Jangan menyatakan actual LIVE write PASS. Tiada lagi percubaan pengecualian tarikh diluluskan untuk malam ini.
+- **PENTING UNTUK UAT 28 NOV:** Jangan gunakan resit contoh lama `R0146` kerana ia kini peserta sebenar. Cari peserta berdasarkan nama **PESERTA DUMMY CHECK-IN GS26** dalam `Daftar GS` dan salin `No_Resit` semasa tepat sebelum ujian; snapshot akhir 27 Nov ialah **`GS26_R0147` / `6789`**. Selepas ujian satu write, semak tepat satu baris `b1d1` lalu uji duplicate sekali sahaja.
+- **Operasi backup:** jika portal/Apps Script gagal, catat kehadiran di kertas (nama, resit, sesi dan masa), jangan gandakan write ketika status UNKNOWN; semak dan rekonsiliasi kemudian. Jangan buat hotfix/deploy sewaktu kaunter sibuk kecuali isu kritikal disahkan dan rollback tersedia.
+- **Risiko susulan:** audit formula resit/sijil yang bergantung baris dan kestabilan ID selepas program; jangan ubah formula/roster pada malam sebelum program. Production eCERT kekal **HOLD**.
+
+Dokumen sejarah lama di bawah ialah snapshot waktu terdahulu; **jangan ikut contoh `R0146` untuk ujian esok**. Rujuk [checkpoint terbaru dan SOP](docs/GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md).
+
 ## Status production — checkpoint 27 November 2026 (petang; rujukan sejarah)
 
 | Komponen | Status / bukti |
@@ -38,12 +53,12 @@
 
 1. Pada 28 Nov, buka portal → **Urusetia** → login → pastikan **Batch 1 · Hari 1 (`b1d1`)** terpilih.
 2. Bila kaunter bersedia, klik **Buka check-in**. Jangan cuba membuka/merekod di luar tarikh program.
-3. Uji terkawal menggunakan **peserta dummy**: resit pendek `R0146`, 4 digit telefon `6789`. Pastikan mesej **BERJAYA**, kemudian **semak tepat satu rekod `GS26_R0146` / `b1d1`** pada tab `KEHADIRAN_GS`.
+3. Uji terkawal menggunakan **PESERTA DUMMY CHECK-IN GS26**: semak dahulu `No_Resit` terkini dalam `Daftar GS` (**snapshot terakhir `R0147`**, bukan resit lama `R0146`), 4 digit telefon `6789`. Pastikan mesej **BERJAYA**, kemudian **semak tepat satu rekod resit dummy terkini / `b1d1`** pada tab `KEHADIRAN_GS`.
 4. Ulang input yang sama menggunakan telefon kedua; sepatutnya **SUDAH DIREKOD** dan **tiada baris tambahan**.
 5. Penjaga sebenar boleh scan QR poster tetap. Jika respons **STATUS TIDAK DIKETAHUI**, **semak kehadiran dahulu** sebelum cuba semula; jika terganggu, rekod kehadiran secara manual di kertas dan buat rekonsiliasi kemudian.
 6. Tamat sesi: urusetia **Tutup check-in** dan semak jumlah rasmi.
 
-**Nota data ujian:** `R0144` ialah resit **peserta sebenar**; **jangan gunakan** untuk QA. Dummy terkini berada pada `GS26_R0146` (semakan Sheet 27 Nov). `No_Resit` dikira melalui formula mengikut baris dan boleh berubah jika susunan data berubah. Semak semula sebelum ujian. **Jangan padam atau edit rekod pendaftaran/kehadiran secara spontan.**
+**Nota data ujian (checkpoint akhir malam 27 Nov):** `GS26_R0146` kini resit **peserta sebenar Batch 2** — **JANGAN gunakan untuk QA**. Dummy semasa ialah `GS26_R0147` / `6789` pada snapshot semakan, tetapi formula resit bergantung baris dan boleh berubah lagi. Semak **nama dummy dan No_Resit terkini** sebelum ujian. **Jangan padam atau edit rekod pendaftaran/kehadiran secara spontan.**
 
 📘 **[Audit, bukti, had dan rollback terkini](docs/AUDIT_CHECKIN_2026-11-27.md)**  
 📚 **[Sejarah Manual Check-in V5 (superseded)](docs/GS_MANUAL_CHECKIN_V5_2026-11-26.md)**
