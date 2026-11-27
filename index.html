@@ -44,7 +44,7 @@
   </style>
 <link rel="stylesheet" href="./js/checkin.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
-<script defer src="./js/checkin.js?v=20261127-date-gated-checkin"></script>
+<script defer src="./js/checkin.js?v=20261127-cors-direct"></script>
 </head>
 <body>
   <nav class="nav" aria-label="Navigasi utama"><div class="nav-inner"><a class="brand" href="#utama" aria-label="Generasi Sunnah 2026"><span class="mark" aria-hidden="true"><img src="./sl-logo.png" alt=""></span><span><strong>GENERASI SUNNAH</strong><small>PROGRAM 2026</small></span></a><span class="tag">MINI CHECK-IN</span></div></nav>
@@ -162,23 +162,16 @@
     if(gsQuotaRetryTimer){clearTimeout(gsQuotaRetryTimer);gsQuotaRetryTimer=null;}
     gsQuotaLastAttempt=Date.now();
     gsQuotaUpdated.textContent=gsQuotaLoaded?'Mengemas kini data pendaftaran…':'Sedang memuat data pendaftaran terkini…';
-    const el=document.createElement('script'),before=gsQuotaResponses;
-    gsQuotaRequest=el;
-    let finished=false;
-    const finish=ok=>{
-      if(finished)return;
-      finished=true;
-      clearTimeout(gsQuotaTimer);
-      el.remove();
-      gsQuotaRequest=null;
-      if(!ok)gsQuotaFailure();
-    };
-    el.src=GS_WEBAPP_URL+'?view=quota&_='+Date.now();
-    el.async=true;
-    el.addEventListener('load',()=>finish(gsQuotaResponses>before));
-    el.addEventListener('error',()=>finish(false));
-    gsQuotaTimer=setTimeout(()=>finish(gsQuotaResponses>before),12000);
-    document.head.appendChild(el);
+    // Plain CORS GET (no cookies). The existing ?view=quota JS payload is parsed
+    // as data and NEVER executed. Falls back to the iframe page on failure.
+    const before=gsQuotaResponses,ctrl=new AbortController();
+    gsQuotaRequest=ctrl;
+    gsQuotaTimer=setTimeout(()=>ctrl.abort(),15000);
+    fetch(GS_WEBAPP_URL+'?view=quota&_='+Date.now(),{mode:'cors',credentials:'omit',cache:'no-store',redirect:'follow',signal:ctrl.signal})
+      .then(r=>r.text())
+      .then(t=>{const m=/^window\.GSQuotaReceive\(([\s\S]*)\);?\s*$/.exec(t.trim());if(m)window.GSQuotaReceive(JSON.parse(m[1]));})
+      .catch(()=>{})
+      .finally(()=>{clearTimeout(gsQuotaTimer);gsQuotaRequest=null;if(gsQuotaResponses<=before)gsQuotaFailure();});
   }
   document.getElementById('quotaRetry').addEventListener('click',()=>{
     gsQuotaRetryCount=0;

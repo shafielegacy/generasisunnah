@@ -23,6 +23,16 @@ test('closed session FAIL',()=>{set('2026-11-28',false);assert.throws(()=>check(
 test('wrong phone FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_R0144','1111'),/tidak dapat disahkan/);});
 test('invalid receipt FAIL',()=>{set('2026-11-28');assert.throws(()=>check('GS26_X0144'),/tidak sah/);});
 test('staff write date guard',()=>{set('2026-11-27');assert.throws(()=>ctx.gsRequireEvent_('b1d1'),/luar tarikh/);});
-test('frontend no QR code dependence',()=>{assert(!ui.includes('hasQR'));assert(!ui.includes('qrCode'));assert(ui.includes("api('gsSelfCheckin',{receipt:fullReceipt,last4:$('gsPhone').value})"));});
+test('frontend no QR code dependence',()=>{assert(!ui.includes('hasQR'));assert(!ui.includes('qrCode'));assert(ui.includes("api('gsSelfCheckin',{receipt:'GS26_'+shortReceipt,last4})"));});
 test('GitHub homepage retained',()=>{assert(!index.includes('location.replace(dest.href)'));assert(index.includes('id="gsNativeApp"'));});
+test('direct CORS transport: no no-cors, no JSONP polling, no cookies',()=>{assert(!ui.includes("no-cors"));assert(!ui.includes('view=rpc'));assert(!ui.includes("createElement('script')"));assert(ui.includes("mode:'cors'"));assert(ui.includes("credentials:'omit'"));});
+test('no automatic retry loop around POST',()=>{assert.equal((ui.match(/await fetch\(/g)||[]).length,1);assert(!/for\s*\(let n=0;n<16/.test(ui));});
+test('success shown only on backend ok===true',()=>{assert(ui.includes("if(!d||d.ok!==true)throw new GsUncertain"));});
+test('quota uses CORS fetch, never executes remote script',()=>{assert(index.includes("?view=quota&_='+Date.now(),{mode:'cors',credentials:'omit'"));assert(!index.includes("el.src=GS_WEBAPP_URL+'?view=quota"));});
+test('write path re-checks date INSIDE the lock (forged request, flag open, 27 Nov)',()=>{
+  const c2={Date,console,released:0,opened:0};vm.createContext(c2);vm.runInContext(gs,c2);
+  vm.runInContext("LockService={getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{globalThis.released++;}})};SpreadsheetApp={openById:()=>{globalThis.opened++;throw new Error('MUST NOT OPEN SHEET');}};gsDay_=()=>'2026-11-27';gsOpen_=()=>true;",c2);
+  assert.throws(()=>c2.gsWriteCheckin_('b1d1','GS26_R0144','QR PESERTA','PESERTA'),/luar tarikh/);
+  assert.equal(c2.opened,0);assert.equal(c2.released,1);
+});
 console.log(n+' offline QA tests passed; NO GOOGLE CALLS.');

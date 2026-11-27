@@ -1,5 +1,5 @@
 
-/* GitHub-native check-in, using the existing Apps Script deployment (no extra hosting). */
+/* GitHub-native check-in, using the existing Apps Script deployment (no extra hosting). Direct CORS transport. */
 (() => {
 'use strict';
 const BASE=String(window.GS_WEBAPP_URL||'');
@@ -10,49 +10,31 @@ const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 const sessions=[['b1d1','Batch 1 · Hari 1 · 28 Nov'],['b1d2','Batch 1 · Hari 2 · 29 Nov'],['b2d1','Batch 2 · Hari 1 · 5 Dis'],['b2d2','Batch 2 · Hari 2 · 6 Dis']];
 let token='',today='',current='',currentTab='peserta',pub=[],snapshot=null,submitting=false,publicStatusLoaded=false;
-// GAS does not expose CORS response headers. POST the private payload without
-// exposing a response, then read the short-lived result by an unguessable ID.
-const callbacks=new Map();
-window.GS_PORTAL_RPC_RESULT=function(id,result){
-  const done=callbacks.get(id);
-  if(done)done(result);
-};
-function pollOnce(id){
-  return new Promise(resolve=>{
-    let finished=false;
-    const el=document.createElement('script');
-    const timeout=setTimeout(()=>done({ready:false}),6500);
-    function done(value){
-      if(finished)return;
-      finished=true;clearTimeout(timeout);callbacks.delete(id);el.remove();resolve(value);
-    }
-    callbacks.set(id,done);
-    el.onerror=()=>done({ready:false});
-    el.onload=()=>setTimeout(()=>done({ready:false}),70);
-    el.referrerPolicy='no-referrer';
-    el.src=BASE+'?view=rpc&rid='+encodeURIComponent(id)+'&_='+Date.now();
-    document.head.appendChild(el);
-  });
-}
+// ONE standard CORS request per action. Apps Script ContentService answers
+// via script.googleusercontent.com with Access-Control-Allow-Origin:*, so the
+// browser can read the JSON directly. text/plain keeps it a "simple" request
+// (no preflight). No cookies, no JSONP, no CacheService polling, NO auto-retry.
+class GsUncertain extends Error{}
 async function api(action,...args){
-  const bytes=crypto.getRandomValues(new Uint8Array(16));
-  const id=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
-  const body=JSON.stringify({rpcId:id,action,args});
+  const body=JSON.stringify({action,args});
   if(body.length>4096)throw new Error('Permintaan terlalu panjang.');
-  await fetch(BASE,{method:'POST',mode:'no-cors',credentials:'omit',
-    headers:{'Content-Type':'text/plain;charset=UTF-8'},body,cache:'no-store'});
-  for(let n=0;n<16;n++){
-    const reply=await pollOnce(id);
-    if(reply&&reply.ready){
-      const result=reply.result;
-      if(!result||result.ok!==true)throw new Error(result?.error||'Permintaan gagal.');
-      return result.data;
-    }
-    await new Promise(resolve=>setTimeout(resolve,700));
-  }
-  throw new Error('Tiada jawapan daripada GAS. Semak sambungan, kemudian cuba lagi.');
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),30000);
+  let response,result;
+  try{
+    response=await fetch(BASE,{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',
+      redirect:'follow',headers:{'Content-Type':'text/plain;charset=UTF-8'},body,signal:ctrl.signal});
+    const raw=await response.text();
+    result=JSON.parse(raw);
+  }catch(_){
+    // Network drop, timeout, or a non-JSON page: the server MAY have processed it.
+    throw new GsUncertain('Sambungan terputus sebelum pengesahan diterima.');
+  }finally{clearTimeout(timer);}
+  if(!response.ok||!result||typeof result.ok!=='boolean')throw new GsUncertain('Jawapan pelayan tidak sah.');
+  if(result.ok!==true)throw new Error(String(result.error||'Permintaan ditolak.'));
+  return result.data;
 }
-function message(id,text,isError=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);}
+function message(id,text,isError=false,isOk=false){const e=$(id);e.textContent=text||'';e.classList.toggle('error',isError);e.classList.toggle('ok',isOk);}
 function make(tag,value,cssClass){const e=document.createElement(tag);e.textContent=value||'';if(cssClass)e.className=cssClass;return e;}
 function setTab(v){currentTab=v;$('gsParticipant').classList.toggle('gs-hidden',v!=='peserta');$('gsStaff').classList.toggle('gs-hidden',v!=='urusetia');root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===v));if(v==='urusetia'&&token)refreshStaff();}
 function render(){
@@ -88,13 +70,13 @@ function updatePublic(){
  $('gsState').textContent=!publicStatusLoaded?'Status belum dapat disemak':!eventToday?'Di luar tarikh program':open?'✓ Check-in dibuka':'Check-in belum dibuka';
  const notice=$('gsNotice');
  notice.textContent=!publicStatusLoaded
-  ?'Status sesi tidak dapat disemak. Cuba muat semula halaman.'
+  ?'Status sesi belum dapat disemak. Anda masih boleh tekan Sahkan Kehadiran; pelayan akan menyemak tarikh dan maklumat.'
   :!eventToday?'Check-in belum dibenarkan hari ini. Sila hadir pada tarikh program.'
   :!open?'Sesi hari ini belum dibuka oleh urusetia.'
   :'Sesi check-in dibuka. Masukkan resit dan 4 digit telefon penjaga.';
  $('gsInstruction').textContent=eventToday&&s?'Sesi hari ini: '+s.label:'Sesi akan dipilih secara automatik pada hari program.';
  notice.classList.toggle('gs-notice-open',publicStatusLoaded&&eventToday&&open);
- $('gsSubmit').disabled=submitting||!publicStatusLoaded||!eventToday||!open;
+ $('gsSubmit').disabled=submitting||(publicStatusLoaded&&(!eventToday||!open));
 }
 async function refreshPublic(){
  try{
@@ -109,17 +91,23 @@ async function refreshPublic(){
  }
 }
 async function selfCheckin(e){
- e.preventDefault();if(submitting||!publicStatusLoaded||!current)return;submitting=true;updatePublic();
- message('gsPublicMessage','Menyimpan kehadiran…');
+ e.preventDefault();if(submitting)return;
+ const shortReceipt=$('gsReceipt').value.trim().toUpperCase(),last4=$('gsPhone').value.trim();
+ if(!/^R\d{4}$/.test(shortReceipt)){message('gsPublicMessage','Masukkan kod resit seperti R0049.',true);return;}
+ if(!/^\d{4}$/.test(last4)){message('gsPublicMessage','Masukkan 4 digit terakhir telefon penjaga.',true);return;}
+ submitting=true;updatePublic();
+ message('gsPublicMessage','Menyemak dan menyimpan kehadiran… jangan tutup halaman ini.');
  try{
-  const shortReceipt=$('gsReceipt').value.trim().toUpperCase();
-  if(!/^R\d{4}$/.test(shortReceipt))throw new Error('Masukkan kod resit seperti R0049.');
-  // All official 2026 receipts are GS26_R####, validated against the current roster.
-  const fullReceipt='GS26_'+shortReceipt;
-  const d=await api('gsSelfCheckin',{receipt:fullReceipt,last4:$('gsPhone').value});
-  message('gsPublicMessage',d.message||'Kehadiran direkod.');$('gsReceipt').value='';$('gsPhone').value='';
- }
- catch(err){message('gsPublicMessage',err.message,true);}finally{submitting=false;updatePublic();}
+  // All official 2026 receipts are GS26_R####. Session is chosen by the SERVER from Malaysia's date.
+  const d=await api('gsSelfCheckin',{receipt:'GS26_'+shortReceipt,last4});
+  if(!d||d.ok!==true)throw new GsUncertain('Jawapan pelayan tidak lengkap.');
+  message('gsPublicMessage',d.already?'✓ Kehadiran anda SUDAH direkod untuk sesi hari ini. Tiada tindakan lanjut diperlukan.':'✓ BERJAYA. Kehadiran direkod untuk sesi hari ini. Tunjukkan skrin ini kepada urusetia jika diminta.',false,true);
+  $('gsReceipt').value='';$('gsPhone').value='';
+ }catch(err){
+  if(err instanceof GsUncertain)
+   message('gsPublicMessage','Status belum pasti: '+err.message+' Kehadiran mungkin sudah direkod. Tekan Sahkan Kehadiran SEKALI lagi untuk menyemak (sistem tidak akan merekod dua kali), atau rujuk urusetia.',true);
+  else message('gsPublicMessage',err.message,true);
+ }finally{submitting=false;updatePublic();}
 }
 async function login(e){
  e.preventDefault();const key=$('gsKey').value;$('gsKey').value='';$('gsLoginButton').disabled=true;

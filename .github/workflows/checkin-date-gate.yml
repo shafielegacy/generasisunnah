@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/simple-date-gated-checkin-20261127
+      - fix/checkin-cors-direct-20261127
     paths:
       - 'gas/Code.gs'
       - 'js/checkin.js'
