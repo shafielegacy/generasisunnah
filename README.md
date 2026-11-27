@@ -17,7 +17,7 @@
 - [Laporan release, rollback dan milestone OWNER](docs/GS_UI_V2_LIVE_RELEASE_2026-11-27.md)
 - [Sejarah projek dengan checkpoint malam 27 Nov](docs/GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md)
 - **Rollback:** `rollback/pre-ui-v2-20261127` (`114eb7b`) atau revert merge `2148443` selepas semakan operator. PR #6 (demo) kekal Draft dan bukan production.
-- **eCERT:** Phase 2 Google QA 32 assertion PASS, staging Draft PR #5; Phase 3 sedang diteruskan secara terasing. Pengeluaran eCERT peserta sebenar tetap **HOLD**.
+- **eCERT:** Phase 2 Google QA **32 assertions PASS** (Draft [PR #5](https://github.com/shafielegacy/generasisunnah/pull/5)); Phase 3 **Google concurrency, post-PDF recovery dan Batch 2 PASS**, regresi **57/57**, [GitHub Actions akhir SUCCESS](https://github.com/shafielegacy/generasisunnah/actions/runs/46002351278) pada [Draft PR #8](https://github.com/shafielegacy/generasisunnah/pull/8). **Timeout semula jadi Apps Script NOT VERIFIED; production eCERT HOLD; email OFF; tiada merge/deploy.** [Laporan Phase 3 di branch QA](https://github.com/shafielegacy/generasisunnah/blob/staging/ecert-phase3-reliability/staging/native-ecert/PHASE3_RELIABILITY_QA_2026-11-27.md).
 
 ## Status production — checkpoint 27 November 2026 (petang; rujukan sejarah)
 
