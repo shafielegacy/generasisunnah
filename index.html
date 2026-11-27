@@ -53,7 +53,7 @@
     <section class="quota-panel" aria-label="Status pendaftaran semasa" id="quotaStatus">
       <div class="quota-top">
         <h2>Status Pendaftaran Semasa</h2>
-        <div class="quota-meta"><p class="quota-updated" id="quotaUpdated" aria-live="polite">Sedang memuat data pendaftaran terkini…</p><button type="button" class="quota-retry" id="quotaRetry">Muat semula</button></div>
+        <div class="quota-meta"><a class="quota-retry" id="gsQuotaDirect" target="_blank" rel="noopener noreferrer">Buka data LIVE</a><p class="quota-updated" id="quotaUpdated" aria-live="polite">Sedang memuat data pendaftaran terkini…</p><button type="button" class="quota-retry" id="quotaRetry">Muat semula</button></div>
       </div>
       <div class="quota-grid">
         <div class="quota-card" data-quota-batch="1">
@@ -68,7 +68,7 @@
         </div>
       </div>
     </section>
-    <p id="quotaHelp" class="quota-updated" hidden>Data kuota tidak dapat disemak pada telefon ini. Untuk urusan kehadiran, <a id="gsNativeBackup" target="_blank" rel="noopener noreferrer">buka Check-in alternatif (Google Apps Script)</a>.</p>
+    <p id="quotaHelp" class="quota-updated" hidden>Data kuota tidak dapat dipaparkan dalam portal ini. <a id="gsQuotaDirectBackup" target="_blank" rel="noopener noreferrer">Buka status pendaftaran LIVE terus di Google Apps Script</a>. Untuk urusan kehadiran, <a id="gsNativeBackup" target="_blank" rel="noopener noreferrer">buka Check-in alternatif (Google Apps Script)</a>.</p>
     <div id="gsNativeApp"><p class="gs-help">Memuatkan Mini Check-in…</p></div>
   </main>
   <footer class="foot"><span>© Generasi Sunnah 2026</span></footer>
@@ -151,7 +151,7 @@
     gsQuotaUpdated.textContent=gsQuotaLoaded
       ?'Sambungan terganggu. Data terakhir mungkin tidak terkini — tekan Muat semula.'
       :'Sambungan terus gagal. Mencuba saluran data alternatif…';
-    if(!gsQuotaLoaded)gsQuotaStartFallback();
+    if(!gsQuotaLoaded){gsQuotaHelp.hidden=false;gsQuotaStartFallback();}
     if(gsQuotaRetryCount<1&&!gsQuotaRetryTimer){
       gsQuotaRetryCount++;
       gsQuotaRetryTimer=setTimeout(()=>{gsQuotaRetryTimer=null;gsRefreshQuota();},3000);
@@ -192,6 +192,8 @@
   // Public Apps Script URL only. Passwords and personal data are never stored here.
   const GS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby5gwUQ3r-MTpGE3SHJCD4EkcnYc6AFLK-dGaRQ6-lzQhu97A2MMSzSWUwENNDxvBF4hQ/exec';
   window.GS_WEBAPP_URL = GS_WEBAPP_URL;
+  document.getElementById('gsQuotaDirect').href=GS_WEBAPP_URL+'?view=quota-page';
+  document.getElementById('gsQuotaDirectBackup').href=GS_WEBAPP_URL+'?view=quota-page';
   const backupParams=new URLSearchParams(location.search);
   const backupMode=backupParams.get('mode')==='urusetia'?'urusetia':'peserta';
   const backupSession=backupParams.get('session')||'',backupCode=backupParams.get('code')||'';
