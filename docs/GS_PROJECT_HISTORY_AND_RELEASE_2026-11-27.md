@@ -148,3 +148,32 @@ Lihat [rekod LIVE UI V2](GS_UI_V2_LIVE_RELEASE_2026-11-27.md) untuk bukti ujian 
 - **STRICT HOLD**: e-mel OFF, tiada trigger, tiada sijil peserta sebenar, tiada merge/deploy GAS, Sheets atau AutoCrat production.
 
 **Keutamaan operasi seterusnya:** 28 November `b1d1` — semak UI V2 login urusetia, buka check-in, telefon dummy `R0146`/`6789` selepas sahkan formula resit dan **tepat satu** baris `KEHADIRAN_GS`; cubaan kedua mesti menghasilkan `SUDAH DIREKOD` tanpa duplikasi. Jangan alihkan perhatian atau ubah production sebelum ujian lapangan.
+
+
+## 10. Checkpoint operasi akhir — Live Dummy UAT dibatalkan dan rollback GAS berjaya (27 Nov 2026, 22:46–22:55 MYT)
+
+**Keputusan:** temporary QA deployment **DIBATALKAN/ROLLBACK PASS**; GAS production **Version 7 RESTORED**; Premium UI V2 LIVE tidak diubah; UAT sebenar check-in → `KEHADIRAN_GS` kekal **PENDING**.
+
+### Kronologi dan bukti
+1. OWNER meluluskan ujian pengecualian tarikh **khusus dummy**, bukan pembukaan akses umum. Claude menyediakan branch `qa/r0146-one-dummy-uat-20261127` commit `0562f48` (tidak merge), dengan `Code.gs` QA dan ujian 15/15 offline PASS serta regresi 29/29 PASS. Pengecualian bertarikh MYT 27 Nov sahaja, terhad kepada self-check-in `GS26_R0146` / `6789`, `b1d1`, memerlukan flag sesi OPEN. Ini bukti offline; bukan UAT Google sebenar.
+2. OWNER membandingkan editor Apps Script dengan `main`: baseline `Code.gs` **389 baris / SHA-256 `34c3b9edec64`**, `Checkin.html` **91 baris / `206c4cba4e5b`**, kedua-duanya **SAMA**. Version 7 deployment asal 27 Nov 17:07 MYT disahkan boleh dipilih.
+3. OWNER menyalin Version A ke HEAD editor dan memeriksa hash sementara **400 baris / `f2494c6bd59b`**. GAS **Version 8** dideploy sekitar **22:46 MYT** pada *deployment yang sama*, URL `/exec` kekal. `Checkin.html` tidak diubah.
+4. **Ujian baca sahaja** `gsSelfCheckinStatus` pada Version 8 dengan `GS26_R0146` / `6789` mendapat `{ok:false,error:'Maklumat tidak dapat disahkan...'}`. Tidak terdapat bukti sebarang `gsSelfCheckin` write dilakukan atau berjaya.
+5. Diagnosis melalui **Google Sheets rasmi**: pendaftaran baharu telah mengubah formula `No_Resit` berasaskan baris. Pada snapshot akhir 27 Nov, **resit `GS26_R0146` milik peserta sebenar Batch 2**, sementara `PESERTA DUMMY CHECK-IN GS26` menggunakan **`GS26_R0147`** dengan digit akhir telefon `6789`. `KEHADIRAN_GS` diperiksa: **0 rekod kehadiran**. **Jangan gunakan `R0146` dalam QA lagi.**
+6. OWNER menghentikan ujian dan **memilih Version 7** pada deployment aktif yang sama. Screenshot mengesahkan `Deployment successfully updated — Version 7 on 27 Nov 2026, 17:07` dan deployment ID asal tidak berubah. Editor `Code.gs` kemudian dipulihkan kepada `main` dengan padanan **`SAMA / 389 baris / 34c3b9edec64`**; `Checkin.html` kekal padanan asal. **Version 8 tidak lagi digunakan oleh deployment LIVE** mengikut bukti owner.
+7. **Tiada pengubahsuaian pendaftaran, kehadiran, formula, AutoCrat atau eCERT** dibuat dalam proses pemulihan ini. Temporary QA branch kekal berasingan dan tidak perlu di-merge.
+
+### Operational GO/NO-GO — 28 November
+- **Status:** sistem sedia untuk ujian lapangan; **bukan** E2E write PASS lagi. GAS production V7 dan Premium UI V2 LIVE dipelihara.
+- Sebelum kaunter bermula, urusetia **semak sesi `b1d1` dan flag OPEN/CLOSED**. Flag sebelum ujian dilaporkan OPEN; selepas tengah malam akses mungkin tersedia walaupun kaunter belum sedia. Operator boleh tutup sesi pada 28 Nov jika mahu mengawal kemasukan.
+- **Ujian dummy:** cari nama `PESERTA DUMMY CHECK-IN GS26` dalam `Daftar GS`; sahkan `No_Resit` semasa dan 4 digit telefon **6789**. Snapshot terakhir ialah **`GS26_R0147`**, tetapi **jangan hard-code** kerana boleh berubah jika pendaftaran bertambah.
+- Menggunakan portal rasmi/QR sebenar pada tarikh program, hantar **satu** check-in; verify `KEHADIRAN_GS` mengandungi tepat satu `b1d1` / resit dummy semasa. Cuba kedua sekali untuk **SUDAH DIREKOD** tanpa baris pendua. Had percubaan **8 bagi setiap resit / 15 minit**; elakkan percubaan berulang.
+- Jika terdapat ralat atau UNKNOWN, **jangan spam write**: semak dahulu status serta tab kehadiran; ambil screenshot. Semasa kaunter sibuk, gunakan **backup kehadiran kertas** dengan nama, resit, sesi, masa, dan buat rekonsiliasi selepas sistem stabil.
+- **Jika gagal kritikal:** selidik sama ada frontend, login staf, state OPEN/CLOSED, roster receipt drift, server error atau jaringan. Jangan ubah formula/resit atau deploy hotfix tidak diuji ketika peserta menunggu. Frontend rollback tersedia pada `rollback/pre-ui-v2-20261127`; backend baseline ialah GAS Version 7 pada deployment `/exec` yang sama.
+
+### Item pasca-program
+- Reka pengenal resit/sijil **immutable** yang tidak berubah apabila baris baharu ditambah atau susunan roster berubah. Audit hubungan resit yang sudah dihantar, dedup attendance dan pemetaan sijil sebelum migrasi; **jangan tukar formula LIVE semasa program**.
+- Sahkan ujian production E2E sebenar bagi setiap sesi program dan catat bukti status.
+- Native eCERT Phase 3 QA kekal pada [Draft PR #8](https://github.com/shafielegacy/generasisunnah/pull/8); production eCERT **HOLD**.
+
+**Release gate akhir 27 Nov:** UI V2 LIVE = PASS; GAS V7 rollback = PASS; dummy pre-date QA write = **NOT COMPLETED**; check-in E2E pada hari program = **PENDING**; eCERT production = **HOLD**.
