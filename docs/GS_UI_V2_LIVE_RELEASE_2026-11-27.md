@@ -88,3 +88,15 @@ Integrasi meliputi: format request, semua hasil (BERJAYA, SUDAH, GAGAL, TIDAK DI
 **Had bukti:** 21/21 ujian Playwright menggunakan GAS dimock; 11/11 statik, 29/29 date guard, 9/9 regresi legacy ialah QA, **bukan** bukti penulisan sebenar. Login staf, buka/tutup sesi, check-in manual dan self check-in production masih **NOT VERIFIED** sehingga sesi 28 Nov. Tiada perubahan eCERT atau AutoCrat dibenarkan oleh milestone ini.
 
 **Release gate:** UI LIVE = **PASS**; operasi tulis check-in ke Sheets = **PENDING**; eCERT production = **HOLD**.
+
+
+## Addendum 27 Nov 2026, ~22:55 MYT — GAS rollback dan pembetulan SOP dummy
+
+**Checkpoint ini menggantikan nombor resit dummy dalam seksyen UAT terdahulu, bukan mengubah bukti release frontend pada 20:31 MYT.**
+
+- Temporary GAS Version 8 yang mengandungi pengecualian tarikh khusus `GS26_R0146` pernah dideploy sekitar 22:46 MYT bagi cubaan QA satu dummy. `gsSelfCheckinStatus` mengembalikan error padanan resit/telefon, **tidak membuktikan penulisan check-in**.
+- Google Sheets rasmi mengesahkan **resit `GS26_R0146` kini milik peserta sebenar Batch 2** selepas pendaftaran baharu, manakala **dummy berada pada `GS26_R0147` / `6789`** pada snapshot akhir malam 27 Nov. Formula resit bergantung pada baris. **JANGAN gunakan `R0146` untuk QA esok.**
+- OWNER **memulihkan deployment yang sama kepada GAS Version 7 (27 Nov, 17:07)** dan editor `Code.gs` sepadan semula dengan GitHub `main` (`34c3b9edec64`, 389 baris). `Checkin.html` sepadan (`206c4cba4e5b`, 91 baris); URL `/exec` asal tidak ditukar. Tiada LIVE write berjaya. Kehadiran rasmi yang diperiksa masih **0 rekod**.
+- **UAT esok:** cari **PESERTA DUMMY CHECK-IN GS26** mengikut nama dalam `Daftar GS`, salin resit terkini (snapshot `R0147`) dan sahkan 4 digit telefon `6789`. Gunakan portal LIVE pada tarikh 28 Nov, verify satu baris `b1d1`, kemudian satu cubaan pendua tanpa baris tambahan.
+- **Backup:** catat nama/resit/sesi/masa atas kertas sekiranya network, frontend atau GAS bermasalah. UNKNOWN → semak status Sheets terlebih dahulu, jangan terus cuba menulis lagi.
+- Frontend Premium UI V2 kekal LIVE. **Production freeze** sehingga UAT; eCERT production HOLD. Rujuk [Project History checkpoint 10](GS_PROJECT_HISTORY_AND_RELEASE_2026-11-27.md).
